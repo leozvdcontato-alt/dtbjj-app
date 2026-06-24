@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbxY8ksEC6xEX_jvLecF1gmc6xPIAqb5LK686RginNGMzMM6xAi_gJfzkyCniHWzvdGJiw/exec";
+import { supabase } from "../lib/supabase";
 
 export default function PainelTurmas() {
 
@@ -21,16 +19,18 @@ export default function PainelTurmas() {
       professor: "",
     });
 
-  async function carregarTurmas() {
+ async function carregarTurmas() {
 
-    const response = await fetch(
-      `${API_URL}?action=getTurmas`
-    );
+  const { data, error } =
+    await supabase
+      .from("turmas")
+      .select("*");
 
-    const data = await response.json();
+  console.log("DATA:", data);
+  console.log("ERROR:", error);
 
-    setTurmas(data.turmas || []);
-  }
+  setTurmas(data || []);
+}
 
   useEffect(() => {
 
@@ -68,24 +68,42 @@ export default function PainelTurmas() {
 
     if (editando) {
 
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "updateTurma",
-          linha: editando.linha,
-          ...form,
-        }),
-      });
+      const { error } =
+        await supabase
+          .from("turmas")
+          .update({
+            nome: form.nome,
+            horario: form.horario,
+            professor: form.professor,
+          })
+          .eq("id", editando.id);
+
+      if (error) {
+
+        console.error(error);
+        return;
+
+      }
 
     } else {
 
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "addTurma",
-          ...form,
-        }),
-      });
+      const { error } =
+        await supabase
+          .from("turmas")
+          .insert([
+            {
+              nome: form.nome,
+              horario: form.horario,
+              professor: form.professor,
+            },
+          ]);
+
+      if (error) {
+
+        console.error(error);
+        return;
+
+      }
 
     }
 
