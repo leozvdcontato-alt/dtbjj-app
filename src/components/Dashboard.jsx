@@ -64,79 +64,68 @@ async function carregarAlunos() {
 
       <div className="max-w-7xl mx-auto p-4 md:p-6">
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+<div className="flex items-center justify-between mb-5">
 
-          <div className="flex items-center gap-4">
+  <div className="flex items-center gap-3">
 
-            <img
-              src="/dtbjjapplogo.png"
-              className="w-16 h-16 object-contain"
-              alt="Logo"
-            />
+    <img
+      src="/dtbjjapplogo.png"
+      className="w-12 h-12 object-contain"
+      alt="Logo"
+    />
 
-            <div>
+    <div>
 
-              <h1 className="text-3xl font-bold">
-                Dashboard Admin
-              </h1>
+      <h1 className="text-2xl font-bold leading-none">
+        Dashboard
+      </h1>
 
-              <p className="text-gray-400">
-                Dream Team Brazilian Jiu-Jitsu
-              </p>
+      <p className="text-sm text-gray-400">
+        Dream Team Brazilian Jiu-Jitsu
+      </p>
 
-            </div>
+    </div>
 
-          </div>
+  </div>
 
-          <button
-            onClick={() => setUser(null)}
-            className="bg-red-700 hover:bg-red-600 px-5 py-3 rounded-2xl font-semibold"
-          >
-            Sair
-          </button>
+  <button
+    onClick={() => setUser(null)}
+    className="h-10 px-4 bg-red-700 hover:bg-red-600 rounded-xl font-semibold text-sm"
+  >
+    Sair
+  </button>
 
-        </div>
+</div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+<div className="bg-[#111111] border border-white/10 rounded-2xl p-4 mb-6">
 
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-5">
+  <div className="flex justify-between items-center py-2">
 
-            <p className="text-gray-400 text-sm mb-2">
-              Alunos
-            </p>
+    <span className="text-gray-400">
+      Alunos
+    </span>
 
-            <h2 className="text-4xl font-bold">
-              {alunos.length}
-            </h2>
+    <span className="text-2xl font-bold">
+      {alunos.length}
+    </span>
 
-          </div>
+  </div>
 
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-5">
+  <div className="border-t border-white/10 my-2" />
 
-            <p className="text-gray-400 text-sm mb-2">
-              Turmas
-            </p>
+  <div className="flex justify-between items-center py-2">
 
-            <h2 className="text-4xl font-bold">
-              {turmas.length}
-            </h2>
+    <span className="text-gray-400">
+      Turmas
+    </span>
 
-          </div>
+    <span className="text-2xl font-bold">
+      {turmas.length}
+    </span>
 
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-5">
+  </div>
 
-            <p className="text-gray-400 text-sm mb-2">
-              Sistema
-            </p>
-
-            <h2 className="text-2xl font-bold text-green-500">
-              Online
-            </h2>
-
-          </div>
-
-        </div>
-
+</div>
         <PainelChamada
           turmas={turmas}
         />

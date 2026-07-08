@@ -19,10 +19,9 @@ export default function PainelChamada({
   const [presentes, setPresentes] =
     useState([]);
 
-  async function abrirChamada() {
-
+async function abrirChamada(nomeTurma) {
     const response = await fetch(
-      `${API_URL}?action=getAlunosTurma&turma=${encodeURIComponent(turmaSelecionada)}`
+      `${API_URL}?action=getAlunosTurma&turma=${encodeURIComponent(nomeTurma)}`
     );
 
     const data = await response.json();
@@ -112,23 +111,36 @@ export default function PainelChamada({
 
       {!modoChamada && (
 
-        <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 mb-6">
+        <div className="bg-[#111111] border border-white/10 rounded-2xl p-4 mb-5">
 
-          <h2 className="text-2xl font-bold mb-6">
-            Confirmar Chamada
-          </h2>
+          <div className="flex items-center justify-between mb-4">
 
+            <h2 className="text-xl font-bold">
+              Chamada
+            </h2>
+
+            <span className="text-xs text-gray-400">
+              {turmas.length} turmas
+            </span>
+
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
             <select
               value={turmaSelecionada}
-              onChange={(e) =>
-                setTurmaSelecionada(
-                  e.target.value
-                )
-              }
-              className="h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            >
+onChange={(e) => {
+
+  const turma = e.target.value;
+
+  setTurmaSelecionada(turma);
+
+  if (turma) {
+    abrirChamada(turma);
+  }
+
+}}              
+
+className="h-11 rounded-xl bg-[#1A1A1A] px-4"            >
 
               <option value="">
                 Selecionar turma
@@ -137,7 +149,7 @@ export default function PainelChamada({
               {turmas.map((turma, index) => (
 
                 <option
-                  key={index}
+                  key={turma.id}
                   value={turma.nome}
                 >
                   {turma.nome}
@@ -146,15 +158,7 @@ export default function PainelChamada({
               ))}
 
             </select>
-
-            <button
-              onClick={abrirChamada}
-              disabled={!turmaSelecionada}
-              className="h-14 rounded-2xl bg-red-700 hover:bg-red-600 font-semibold disabled:opacity-40"
-            >
-              Abrir Chamada
-            </button>
-
+            
           </div>
 
         </div>
@@ -163,13 +167,13 @@ export default function PainelChamada({
 
       {modoChamada && (
 
-        <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 mb-6">
+        <div className="bg-[#111111] border border-white/10 rounded-2xl p-4 mb-5">
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
             <div>
 
-              <h2 className="text-3xl font-bold">
+              <h2 className="text-2xl font-bold">
                 {turmaSelecionada}
               </h2>
 
@@ -181,8 +185,7 @@ export default function PainelChamada({
 
             <button
               onClick={confirmarChamada}
-              className="bg-green-700 hover:bg-green-600 px-6 py-4 rounded-2xl font-bold text-lg"
-            >
+              className="h-11 px-5 bg-green-700 hover:bg-green-600 rounded-xl font-semibold">
               Confirmar Chamada
             </button>
 
@@ -201,18 +204,18 @@ export default function PainelChamada({
                 return (
 
                   <button
-                    key={index}
+                    key={aluno.id}
                     onClick={() =>
                       togglePresenca(aluno)
                     }
                     className={
                       presente
-                        ? "bg-green-700 text-white rounded-3xl p-5 text-left transition"
-                        : "bg-[#1A1A1A] border border-white/10 rounded-3xl p-5 text-left transition"
+                        ? "bg-green-700 text-white rounded-2xl p-4 text-left transition"
+                        : "bg-[#1A1A1A] border border-white/10 rounded-2xl p-4 text-left transition"
                     }
                   >
 
-                    <h3 className="text-xl font-bold mb-2">
+                    <h3 className="text-lg font-bold mb-2">
                       {aluno.nome}
                     </h3>
 

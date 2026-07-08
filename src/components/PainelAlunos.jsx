@@ -209,25 +209,20 @@ async function salvarAluno() {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
-          <div>
+<div className="flex items-center justify-between w-full">
 
-            <h2 className="text-2xl font-bold">
-              Gestão de Alunos
-            </h2>
+  <h2 className="text-xl font-bold">
+    Alunos
+  </h2>
 
-            <p className="text-gray-400">
-              Gerencie os alunos cadastrados
-            </p>
+  <button
+    onClick={abrirNovoAluno}
+    className="h-10 px-4 bg-red-700 hover:bg-red-600 rounded-xl text-sm font-semibold"
+  >
+    + Novo
+  </button>
 
-          </div>
-
-          <button
-            onClick={abrirNovoAluno}
-            className="bg-red-700 hover:bg-red-600 px-6 py-4 rounded-2xl font-bold"
-          >
-            Adicionar Aluno
-          </button>
-
+</div>
         </div>
 
         <div className="overflow-auto">
