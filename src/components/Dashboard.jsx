@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 import PainelChamada from "./PainelChamada";
 import PainelAlunos from "./PainelAlunos";
@@ -15,25 +16,20 @@ export default function Dashboard({
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
 
-  async function carregarAlunos() {
+async function carregarAlunos() {
 
-    try {
+  const { data, error } = await supabase
+    .from("alunos")
+    .select("*");
 
-      const response = await fetch(
-        `${API_URL}?action=getAlunos`
-      );
-
-      const data = await response.json();
-
-      setAlunos(data.alunos || []);
-
-    } catch (error) {
-
-      console.error("Erro ao carregar alunos:", error);
-
-    }
-
+  if (error) {
+    console.error(error);
+    return;
   }
+
+  setAlunos(data);
+
+}
 
   async function carregarTurmas() {
 

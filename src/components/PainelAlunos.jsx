@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxY8ksEC6xEX_jvLecF1gmc6xPIAqb5LK686RginNGMzMM6xAi_gJfzkyCniHWzvdGJiw/exec";
@@ -33,16 +34,21 @@ export default function PainelAlunos({
     status: "Ativo",
   });
 
-  async function carregarAlunos() {
+async function carregarAlunos() {
 
-    const response = await fetch(
-      `${API_URL}?action=getAlunos`
-    );
+  const { data, error } = await supabase
+    .from("alunos")
+    .select("*")
+    .order("nome");
 
-    const data = await response.json();
-
-    setAlunos(data.alunos || []);
+  if (error) {
+    console.error(error);
+    return;
   }
+
+  setAlunos(data);
+
+}
 
   useEffect(() => {
 
@@ -88,47 +94,113 @@ function editarAluno(aluno) {
 
 async function abrirPerfil(aluno) {
 
-  const response = await fetch(
-    `${API_URL}?action=getHistoricoAluno&alunoID=${aluno.id}`
-  );
+  const { data: matriculas, error: erroMatriculas } =
+    await supabase
+      .from("matriculas")
+      .select(`
+        turma_id,
+        turmas (
+          id,
+          nome
+        )
+      `)
+      .eq("aluno_id", aluno.id);
 
-  const data = await response.json();
+  if (erroMatriculas) {
+    console.error(erroMatriculas);
+    return;
+  }
 
-  setPerfilAluno(data);
+  const { data: presencas, error: erroPresencas } =
+    await supabase
+      .from("presencas")
+      .select("*")
+      .eq("aluno_id", aluno.id);
+
+  if (erroPresencas) {
+    console.error(erroPresencas);
+    return;
+  }
+
+  const totalPresencas = presencas.length;
+  const metaGraduacao = 60;
+
+  setPerfilAluno({
+    aluno,
+    turmas: matriculas.map(m => m.turmas),
+    totalPresencas,
+    metaGraduacao,
+    faltam: Math.max(0, metaGraduacao - totalPresencas),
+    aptoGraduacao: totalPresencas >= metaGraduacao,
+  });
 
   setPerfilModal(true);
+
 }
 
 async function salvarAluno() {
 
-    if (editando) {
+  alert("salvarAluno foi chamada");
 
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "updateAluno",
-          linha: editando.linha,
-          ...form,
-        }),
-      });
+  console.log("EDITANDO:", editando);
+  console.log("ID:", editando?.id);
+  console.log("FORM:", form);
 
-    } else {
+  let error = null;
 
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "addAluno",
-          ...form,
-        }),
-      });
+  if (editando) {
 
-    }
+    const resultado = await supabase
+      .from("alunos")
+      .update({
+        nome: form.nome,
+        cpf: form.cpf,
+        telefone: form.telefone,
+        faixa: form.faixa,
+        graus: form.graus,
+        categoria: form.categoria,
+        status: form.status,
+      })
+      .eq("id", editando.id)
+      .select();
 
-    setModal(false);
+    console.log("RESULTADO UPDATE:", JSON.stringify(resultado, null, 2));
 
-    carregarAlunos();
+    error = resultado.error;
+
+  } else {
+
+    const resultado = await supabase
+      .from("alunos")
+      .insert([
+        {
+          nome: form.nome,
+          cpf: form.cpf,
+          telefone: form.telefone,
+          faixa: form.faixa,
+          graus: form.graus,
+          categoria: form.categoria,
+          status: form.status,
+        },
+      ])
+      .select();
+
+    console.log("RESULTADO INSERT:", resultado);
+
+    error = resultado.error;
+
   }
 
+  if (error) {
+    console.error("ERRO:", error);
+    return;
+  }
+
+  await carregarAlunos();
+
+  setModal(false);
+
+}
   return (
 
     <>
