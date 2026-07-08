@@ -19,7 +19,7 @@ export default function PainelChamada({
   const [presentes, setPresentes] =
     useState([]);
 
-async function abrirChamada(nomeTurma) {
+  async function abrirChamada(nomeTurma) {
     const response = await fetch(
       `${API_URL}?action=getAlunosTurma&turma=${encodeURIComponent(nomeTurma)}`
     );
@@ -113,34 +113,32 @@ async function abrirChamada(nomeTurma) {
 
         <div className="bg-[#111111] border border-white/10 rounded-2xl p-4 mb-5">
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-5">
 
-            <h2 className="text-xl font-bold">
-              Chamada
+            <p className="text-sm text-red-500 font-semibold uppercase tracking-wider">
+              Aula
+            </p>
+
+            <h2 className="text-3xl font-bold mt-1">
+              Iniciar chamada
             </h2>
 
-            <span className="text-xs text-gray-400">
-              {turmas.length} turmas
-            </span>
+            <p className="text-gray-400 mt-2">
+              Selecione uma turma para começar.
+            </p>
 
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
+          <div className="space-y-3">
             <select
               value={turmaSelecionada}
 onChange={(e) => {
 
-  const turma = e.target.value;
+  setTurmaSelecionada(
+    e.target.value
+  );
 
-  setTurmaSelecionada(turma);
-
-  if (turma) {
-    abrirChamada(turma);
-  }
-
-}}              
-
-className="h-11 rounded-xl bg-[#1A1A1A] px-4"            >
+}}
+              className="w-full h-14 rounded-2xl bg-[#1A1A1A] px-4 text-lg"           >
 
               <option value="">
                 Selecionar turma
@@ -158,7 +156,13 @@ className="h-11 rounded-xl bg-[#1A1A1A] px-4"            >
               ))}
 
             </select>
-            
+<button
+  onClick={() => abrirChamada(turmaSelecionada)}
+  disabled={!turmaSelecionada}
+  className="w-full h-14 rounded-2xl bg-red-700 hover:bg-red-600 disabled:opacity-40 font-bold text-lg transition"
+>
+  Iniciar chamada
+</button>
           </div>
 
         </div>
