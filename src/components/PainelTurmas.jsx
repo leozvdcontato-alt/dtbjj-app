@@ -3,6 +3,12 @@ import { supabase } from "../lib/supabase";
 
 export default function PainelTurmas() {
 
+  const formularioInicial = {
+    nome: "",
+    horario: "",
+    professor: "",
+  };
+
   const [turmas, setTurmas] =
     useState([]);
 
@@ -13,23 +19,22 @@ export default function PainelTurmas() {
     useState(null);
 
   const [form, setForm] =
-    useState({
-      nome: "",
-      horario: "",
-      professor: "",
-    });
+    useState(formularioInicial);
+    
+    async function carregarTurmas() {
 
- async function carregarTurmas() {
+  const { data, error } = await supabase
+    .from("turmas")
+    .select("*")
+    .order("nome");
 
-  const { data, error } =
-    await supabase
-      .from("turmas")
-      .select("*");
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
+  setTurmas(data);
 
-  setTurmas(data || []);
 }
 
   useEffect(() => {
@@ -38,32 +43,27 @@ export default function PainelTurmas() {
 
   }, []);
 
-  function novaTurma() {
+function novaTurma() {
 
-    setEditando(null);
+  setEditando(null);
 
-    setForm({
-      nome: "",
-      horario: "",
-      professor: "",
-    });
+  setForm(formularioInicial);
 
-    setModal(true);
-  }
+  setModal(true);
 
-  function editarTurma(turma) {
+}
+function editarTurma(turma) {
 
-    setEditando(turma);
+  setEditando(turma);
 
-    setForm({
-      nome: turma.nome,
-      horario: turma.horario,
-      professor: turma.professor,
-    });
+  setForm({
+    ...formularioInicial,
+    ...turma,
+  });
 
-    setModal(true);
-  }
+  setModal(true);
 
+}
   async function salvarTurma() {
 
     if (editando) {
@@ -107,10 +107,15 @@ export default function PainelTurmas() {
 
     }
 
-    setModal(false);
+await carregarTurmas();
 
-    carregarTurmas();
-  }
+setForm(formularioInicial);
+
+setEditando(null);
+
+setModal(false);
+
+}
 
   return (
 
@@ -146,7 +151,7 @@ export default function PainelTurmas() {
           {turmas.map((turma, index) => (
 
             <div
-              key={index}
+              key={turma.id}
               className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-5"
             >
 
