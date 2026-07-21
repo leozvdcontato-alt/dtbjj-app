@@ -2,11 +2,8 @@ import PainelChamada from "./PainelChamada";
 
 export default function Home({
   turmas,
-  setTela,
 }) {
-
   return (
-
     <div className="space-y-5">
 
       <PainelChamada
@@ -15,33 +12,29 @@ export default function Home({
 
       <div className="bg-[#111111] border border-white/10 rounded-2xl p-5">
 
-        <h2 className="text-lg font-bold mb-4">
-          Gerenciar
-        </h2>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">🥋</span>
 
-        <button
-          onClick={() => setTela("alunos")}
-          className="w-full flex items-center justify-between h-14 px-4 rounded-xl hover:bg-white/5 transition"
-        >
-          <span>👤 Alunos</span>
-          <span className="text-gray-500">›</span>
-        </button>
+          <h2 className="text-lg font-bold">
+            Próximas graduações
+          </h2>
+        </div>
 
-        <button
-          onClick={() => setTela("turmas")}
-          className="w-full flex items-center justify-between h-14 px-4 rounded-xl hover:bg-white/5 transition"
-        >
-          <span>🥋 Turmas</span>
-          <span className="text-gray-500">›</span>
-        </button>
+        <p className="text-sm text-gray-400">
+          Em breve você verá aqui os alunos mais próximos da próxima faixa.
+        </p>
 
       </div>
 
       <div className="bg-[#111111] border border-white/10 rounded-2xl p-5">
 
-        <h2 className="text-lg font-bold mb-2">
-          Atividade
-        </h2>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">📅</span>
+
+          <h2 className="text-lg font-bold">
+            Última chamada
+          </h2>
+        </div>
 
         <p className="text-sm text-gray-400">
           Nenhuma chamada realizada hoje.
@@ -50,7 +43,5 @@ export default function Home({
       </div>
 
     </div>
-
   );
-
 }

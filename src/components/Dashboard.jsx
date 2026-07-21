@@ -72,13 +72,8 @@ export default function Dashboard({ user, setUser }) {
 
           </div>
 
-          <button
-            onClick={() => setUser(null)}
-            className="h-10 px-4 rounded-xl bg-red-700 hover:bg-red-600 text-sm font-semibold transition"
-          >
-            Sair
-          </button>
-
+<div className="w-10"></div>
+        
         </header>
 
         {/* Telas */}
