@@ -1,77 +1,119 @@
 # TODO - Tatame Pro
 
-## Home
+## 🔔 Sistema de Notificações
 
-- [ ] Remover o card "Atividade" temporariamente.
-- [ ] Transformar "Gerenciar" em uma lista no estilo iOS/Inter, com divisores entre os itens.
-- [ ] Substituir o botão "Sair" por um menu de perfil (avatar no canto superior direito).
-- [ ] Mostrar o nome real do professor no cabeçalho após o login.
-- [ ] Refinar espaçamentos e tipografia da Home.
+### Concluído
 
----
+- [x] Criar componente Toast
+- [x] Melhorar layout do Toast
+- [x] Criar ToastContext
+- [x] Criar ToastProvider
+- [x] Criar hook useToast()
+- [x] Integrar ToastProvider ao projeto
+- [x] Migrar PainelChamada para o Toast global
 
-## Fluxo da Chamada
+### Pendente
 
-- [ ] Manter o fluxo em duas etapas:
-  - Selecionar turma
-  - Confirmar em "Iniciar chamada"
-
-- [ ] Redesenhar completamente a tela da chamada ativa.
-
-Layout desejado:
-
-← Magnólia Kids
-
-12 alunos
-
-☐ Leonardo
-
-☑ Pedro
-
-☐ Gabriel
-
-☑ Rafael
-
-...
-
-12 presentes
-
-[ Finalizar chamada ]
+- [ ] Remover todos os alert() restantes do sistema
+- [ ] Padronizar mensagens de sucesso
+- [ ] Padronizar mensagens de erro
 
 ---
 
-## Gestão
+# 👨‍🎓 Gestão de Alunos
 
-- [ ] Melhorar a tela de Alunos.
-- [ ] Melhorar a tela de Turmas.
-- [ ] Padronizar o cabeçalho de todas as telas:
-  - seta de voltar
-  - título
-  - botão de ação (+ Novo)
+## Refatoração
 
----
+### Objetivo
 
-## Dashboard
+Separar responsabilidades do PainelAlunos para reduzir complexidade e facilitar manutenção.
 
-- [ ] Manter o Dashboard apenas como controlador de navegação.
-- [ ] Toda interface deve ficar dentro dos componentes de tela.
+### Estrutura desejada
 
----
-
-## Dados
-
-- [ ] Exibir a última chamada realizada.
-- [ ] Criar histórico de chamadas.
-- [ ] Exibir quantidade de presentes por chamada.
-- [ ] Criar tela de detalhes da chamada.
+src/components/
+│
+├── PainelAlunos.jsx
+├── AlunoModal.jsx
+└── AlunoPerfil.jsx
 
 ---
 
-## Melhorias futuras
+## Cadastro de Alunos
 
-- [ ] Pesquisa de alunos.
-- [ ] Filtro por turma.
-- [ ] Estatísticas de frequência.
-- [ ] Dashboard para professores.
-- [ ] Tema claro.
-- [ ] Notificações.
+### Implementar
+
+- [ ] Seleção de múltiplas turmas
+- [ ] Carregar matrículas ao editar aluno
+- [ ] Salvar matrículas ao cadastrar aluno
+- [ ] Atualizar matrículas ao editar aluno
+- [ ] Remover matrículas antigas antes da atualização
+
+---
+
+## Perfil do Aluno
+
+- [ ] Separar componente AlunoPerfil
+- [ ] Exibir turmas do aluno
+- [ ] Exibir estatísticas
+- [ ] Exibir progresso para graduação
+
+---
+
+## Listagem de Alunos
+
+- [ ] Adicionar botão Editar
+- [ ] Adicionar botão Perfil
+- [ ] Adicionar botão Excluir
+- [ ] Melhorar ações da tabela
+
+---
+
+# 🥋 Gestão de Turmas
+
+- [ ] Migrar para Toast
+- [ ] Remover alert()
+- [ ] Melhorar validações
+
+---
+
+# 📋 Chamadas
+
+## Corrigir
+
+- [ ] Validar exibição de todos os alunos da turma
+- [ ] Validar funcionamento após implementação das matrículas
+
+---
+
+# 🏠 Dashboard
+
+## Corrigir
+
+- [ ] Buscar última chamada diretamente do Supabase
+- [ ] Atualizar card "Última chamada"
+- [ ] Criar card "Próximas graduações"
+
+---
+
+# ⚙ Arquitetura
+
+## Organização
+
+- [ ] Separar componentes grandes
+- [ ] Reduzir componentes acima de 400 linhas
+- [ ] Centralizar consultas em services
+- [ ] Centralizar notificações
+- [ ] Padronizar tratamento de erros
+
+---
+
+# 🧪 Testes
+
+Após cada refatoração validar:
+
+- [ ] Cadastro de aluno
+- [ ] Edição de aluno
+- [ ] Matrículas
+- [ ] Chamada
+- [ ] Dashboard
+- [ ] Toasts

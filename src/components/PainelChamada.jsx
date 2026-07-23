@@ -1,11 +1,12 @@
 import { useState } from "react";
-import {
-  buscarAlunosDaTurma,
-  criarChamada,
-  registrarPresencas,
-} from "@/services/chamadas";
+import { buscarAlunosDaTurma } from "@/services/alunos";
+import { criarChamada } from "@/services/chamadas";
+import { registrarPresencas } from "@/services/presencas";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function PainelChamada({ turmas }) {
+  const { mostrarToast } = useToast();
+
   const [modoChamada, setModoChamada] = useState(false);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [alunosChamada, setAlunosChamada] = useState([]);
@@ -15,19 +16,19 @@ export default function PainelChamada({ turmas }) {
   async function abrirChamada() {
     if (!turmaSelecionada) return;
 
-    console.log("Turma selecionada:", turmaSelecionada);
-    
     try {
       setCarregando(true);
 
-      const alunos = await buscarAlunosDaTurma(turmaSelecionada);
+      const alunos = await buscarAlunosDaTurma(
+        Number(turmaSelecionada)
+      );
 
       setAlunosChamada(alunos);
       setPresentes([]);
       setModoChamada(true);
     } catch (error) {
       console.error(error);
-      alert("Erro ao carregar alunos.");
+      mostrarToast("Erro ao carregar alunos.", "error");
     } finally {
       setCarregando(false);
     }
@@ -37,7 +38,9 @@ export default function PainelChamada({ turmas }) {
     const existe = presentes.some((p) => p.id === aluno.id);
 
     if (existe) {
-      setPresentes((prev) => prev.filter((p) => p.id !== aluno.id));
+      setPresentes((prev) =>
+        prev.filter((p) => p.id !== aluno.id)
+      );
     } else {
       setPresentes((prev) => [...prev, aluno]);
     }
@@ -48,20 +51,25 @@ export default function PainelChamada({ turmas }) {
       setCarregando(true);
 
       const turma = turmas.find(
-        (t) => String(t.id) === String(turmaSelecionada)
+        (t) => t.id === Number(turmaSelecionada)
       );
 
-      const chamada = await criarChamada({
+      if (!turma) {
+        mostrarToast("Turma não encontrada.", "error");
+        return;
+      }
+
+      const { id: chamadaId } = await criarChamada({
         turmaId: turma.id,
         professor: turma.professor,
       });
 
       await registrarPresencas(
-        chamada.id,
+        chamadaId,
         presentes
       );
 
-      alert("Chamada registrada com sucesso!");
+      mostrarToast("Chamada registrada com sucesso!");
 
       setModoChamada(false);
       setPresentes([]);
@@ -69,7 +77,11 @@ export default function PainelChamada({ turmas }) {
       setTurmaSelecionada("");
     } catch (error) {
       console.error(error);
-      alert("Erro ao registrar chamada.");
+
+      mostrarToast(
+        error.message || "Erro ao registrar chamada.",
+        "error"
+      );
     } finally {
       setCarregando(false);
     }
