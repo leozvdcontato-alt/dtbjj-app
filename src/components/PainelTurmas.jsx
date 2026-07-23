@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ChevronRight } from "lucide-react";
 
-export default function PainelTurmas() {
+export default function PainelTurmas({ setTela }) {
 
   const formularioInicial = {
   nome: "",
@@ -153,9 +153,12 @@ setModal(false);
     <button
       key={turma.id}
       type="button"
-      onClick={() => {
-        console.log("Entrar na turma:", turma);
-      }}
+onClick={() =>
+  setTela({
+    pagina: "turma",
+    turma,
+  })
+}
 className="w-full py-5 text-left hover:bg-white/5 transition-colors"
 >
 

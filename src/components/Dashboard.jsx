@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import TelaTurma from "./TelaTurma";
 
 import Home from "./Home";
 import PainelAlunos from "./PainelAlunos";
@@ -9,8 +10,10 @@ import BottomNavigation from "./navigation/BottomNavigation";
 export default function Dashboard({ user, setUser }) {
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
-  const [tela, setTela] = useState("home");
-
+const [tela, setTela] = useState({
+  pagina: "home",
+  turma: null,
+});
   async function carregarAlunos() {
     const { data, error } = await supabase
       .from("alunos")
@@ -78,26 +81,33 @@ export default function Dashboard({ user, setUser }) {
 
         {/* Telas */}
 
-        {tela === "home" && (
-          <Home
+{tela.pagina === "home" && (
+            <Home
             alunos={alunos}
             turmas={turmas}
             setTela={setTela}
           />
         )}
 
-        {tela === "alunos" && (
-          <PainelAlunos
+{tela.pagina === "alunos" && (
+            <PainelAlunos
             turmas={turmas}
             setTela={setTela}
           />
         )}
 
-        {tela === "turmas" && (
-          <PainelTurmas
+{tela.pagina === "turmas" && (
+            <PainelTurmas
             setTela={setTela}
           />
         )}
+
+{tela.pagina === "turma" && (
+  <TelaTurma
+    turma={tela.turma}
+    setTela={setTela}
+  />
+)}
 
       </main>
 

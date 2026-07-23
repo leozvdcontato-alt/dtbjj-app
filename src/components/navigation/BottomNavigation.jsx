@@ -7,9 +7,14 @@ export default function BottomNavigation({ tela, setTela }) {
       <div className="flex items-center justify-around h-full max-w-5xl mx-auto">
 
         <button
-          onClick={() => setTela("home")}
+onClick={() =>
+  setTela({
+    pagina: "home",
+    turma: null,
+  })
+}
           className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-            tela === "home"
+tela.pagina === "home"
               ? "bg-red-900/30 text-red-500"
               : "text-zinc-400 hover:text-white"
           }`}
@@ -19,9 +24,14 @@ export default function BottomNavigation({ tela, setTela }) {
         </button>
 
         <button
-          onClick={() => setTela("alunos")}
+onClick={() =>
+  setTela({
+    pagina: "alunos",
+    turma: null,
+  })
+}
           className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-            tela === "alunos"
+tela.pagina === "alunos"
               ? "bg-red-900/30 text-red-500"
               : "text-zinc-400 hover:text-white"
           }`}
@@ -31,9 +41,14 @@ export default function BottomNavigation({ tela, setTela }) {
         </button>
 
         <button
-          onClick={() => setTela("turmas")}
+onClick={() =>
+  setTela({
+    pagina: "turmas",
+    turma: null,
+  })
+}
           className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-            tela === "turmas"
+tela.pagina === "turmas"
               ? "bg-red-900/30 text-red-500"
               : "text-zinc-400 hover:text-white"
           }`}
@@ -43,9 +58,14 @@ export default function BottomNavigation({ tela, setTela }) {
         </button>
 
         <button
-          onClick={() => setTela("mais")}
+onClick={() =>
+  setTela({
+    pagina: "mais",
+    turma: null,
+  })
+}
           className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-            tela === "mais"
+tela.pagina === "mais"
               ? "bg-red-900/30 text-red-500"
               : "text-zinc-400 hover:text-white"
           }`}
