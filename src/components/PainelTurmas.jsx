@@ -128,21 +128,17 @@ setModal(false);
           <div>
 
             <h2 className="text-2xl font-bold">
-              Gestão de Turmas
+              Minhas Turmas
             </h2>
-
-            <p className="text-gray-400">
-              Gerencie as turmas cadastradas
-            </p>
 
           </div>
 
-          <button
+          {/*<button
             onClick={novaTurma}
             className="bg-red-700 hover:bg-red-600 px-6 py-4 rounded-2xl font-bold"
           >
             Adicionar Turma
-          </button>
+          </button>*/}
 
         </div>
 
