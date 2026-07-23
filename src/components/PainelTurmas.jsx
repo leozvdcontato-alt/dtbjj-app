@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { ChevronRight } from "lucide-react";
 
 export default function PainelTurmas() {
 
   const formularioInicial = {
-    nome: "",
-    horario: "",
-    professor: "",
-  };
+  nome: "",
+  horario: "",
+  dias: "",
+  professor: "",
+};
 
   const [turmas, setTurmas] =
     useState([]);
@@ -72,10 +74,11 @@ function editarTurma(turma) {
         await supabase
           .from("turmas")
           .update({
-            nome: form.nome,
-            horario: form.horario,
-            professor: form.professor,
-          })
+  nome: form.nome,
+  horario: form.horario,
+  dias: form.dias,
+  professor: form.professor,
+})
           .eq("id", editando.id);
 
       if (error) {
@@ -91,12 +94,13 @@ function editarTurma(turma) {
         await supabase
           .from("turmas")
           .insert([
-            {
-              nome: form.nome,
-              horario: form.horario,
-              professor: form.professor,
-            },
-          ]);
+  {
+    nome: form.nome,
+    horario: form.horario,
+    dias: form.dias,
+    professor: form.professor,
+  },
+]);
 
       if (error) {
 
@@ -121,7 +125,7 @@ setModal(false);
 
     <>
 
-      <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 mt-6">
+      <div className="bg-[#111111] border border-white/10 rounded-2xl p-4 mt-6">
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
@@ -142,41 +146,49 @@ setModal(false);
 
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div className="space-y-4">
 
-          {turmas.map((turma, index) => (
+  {turmas.map((turma) => (
 
-            <div
-              key={turma.id}
-              className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-5"
-            >
+    <button
+      key={turma.id}
+      type="button"
+      onClick={() => {
+        console.log("Entrar na turma:", turma);
+      }}
+className="w-full py-5 text-left hover:bg-white/5 transition-colors"
+>
 
-              <h3 className="text-2xl font-bold mb-3">
-                {turma.nome}
-              </h3>
+      <div className="flex items-center justify-between">
 
-              <p className="text-gray-400 mb-2">
-                🕒 {turma.horario}
-              </p>
+        <div>
 
-              <p className="text-gray-400 mb-5">
-                👨‍🏫 {turma.professor}
-              </p>
+          <h3 className="text-xl font-bold">
+          {turma.nome}
+          </h3>
 
-              <button
-                onClick={() =>
-                  editarTurma(turma)
-                }
-                className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm"
-              >
-                Editar
-              </button>
-
-            </div>
-
-          ))}
-
+{(turma.dias || turma.horario) && (
+  <p className="text-sm text-gray-400 mt-0.5">
+    {[turma.dias, turma.horario]
+      .filter(Boolean)
+      .join(" • ")}
+  </p>
+)}
         </div>
+
+        <ChevronRight
+    size={20}
+    className="text-white/30"
+/>
+
+      </div>
+<hr className="border-white/10 mt-4" />
+
+    </button>
+
+  ))}
+
+</div>
 
       </div>
 
@@ -184,7 +196,7 @@ setModal(false);
 
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
 
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 w-full max-w-xl">
+          <div className="bg-[#111111] border border-white/10 rounded-2xl p-4 w-full max-w-xl">
 
             <h2 className="text-2xl font-bold mb-6">
 
@@ -220,6 +232,53 @@ setModal(false);
                 className="h-14 rounded-2xl bg-[#1A1A1A] px-4"
               />
 
+<div>
+  <label className="block text-sm text-gray-400 mb-3">
+    Dias da semana
+  </label>
+
+  <div className="flex flex-wrap gap-2">
+
+    {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((dia) => {
+
+      const selecionado = form.dias.includes(dia);
+
+      return (
+        <button
+          key={dia}
+          type="button"
+          onClick={() => {
+
+            const dias = form.dias
+              ? form.dias.split(" • ")
+              : [];
+
+            const novosDias = dias.includes(dia)
+              ? dias.filter((d) => d !== dia)
+              : [...dias, dia];
+
+            setForm({
+              ...form,
+              dias: novosDias.join(" • "),
+            });
+
+          }}
+          className={`px-4 py-2 rounded-xl text-sm transition
+            ${
+              selecionado
+                ? "bg-red-700 text-white"
+                : "bg-[#1A1A1A] border border-white/10 hover:border-red-700"
+            }`}
+        >
+          {dia}
+        </button>
+      );
+
+    })}
+
+  </div>
+
+</div>
               <input
                 placeholder="Professor"
                 value={form.professor}
