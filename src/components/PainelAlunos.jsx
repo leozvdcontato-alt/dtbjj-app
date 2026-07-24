@@ -168,6 +168,64 @@ export default function PainelAlunos({
         .eq("id", editando.id)
         .select();
 
+      const alunoId = resultado.data[0].id;
+
+      console.log("Aluno editado:", alunoId);
+      console.log("Turmas selecionadas:", form.turmas);
+
+      const { data: antesDelete } = await supabase
+        .from("matriculas")
+        .select("*")
+        .eq("aluno_id", alunoId);
+
+      console.log("ANTES DO DELETE:", antesDelete);
+
+      // Remove todas as matrículas atuais do aluno
+      const { error: erroDelete } = await supabase
+        .from("matriculas")
+        .delete()
+        .eq("aluno_id", alunoId);
+
+      console.log("ALUNO ID PARA DELETE:", alunoId);
+      console.log("ERRO DELETE:", erroDelete);
+
+      const { data: depoisDelete } = await supabase
+        .from("matriculas")
+        .select("*")
+        .eq("aluno_id", alunoId);
+
+      console.log("DEPOIS DO DELETE:", depoisDelete);
+
+      if (erroDelete) {
+        console.error("Erro ao remover matrículas:", erroDelete);
+      }
+
+      // Cria novamente as matrículas selecionadas
+      if (form.turmas.length > 0) {
+
+        const matriculas = form.turmas.map((turmaId) => ({
+          aluno_id: alunoId,
+          turma_id: turmaId,
+        }));
+
+        console.log("MATRÍCULAS PARA INSERIR:", matriculas);
+
+        const {
+          data: dadosMatriculas,
+          error: erroMatriculas,
+        } = await supabase
+          .from("matriculas")
+          .insert(matriculas)
+          .select();
+
+        console.log("RETORNO MATRÍCULAS:", dadosMatriculas);
+        console.log("ERRO MATRÍCULAS:", erroMatriculas);
+
+        if (erroMatriculas) {
+          console.error("Erro ao salvar matrículas:", erroMatriculas);
+        }
+      }
+
       console.log("RESULTADO UPDATE:", JSON.stringify(resultado, null, 2));
 
       error = resultado.error;
@@ -189,7 +247,26 @@ export default function PainelAlunos({
         ])
         .select();
 
-      console.log("RESULTADO INSERT:", resultado);
+      const alunoId = resultado.data[0].id;
+
+      console.log("Aluno criado:", alunoId);
+      console.log("Turmas selecionadas:", form.turmas);
+
+      if (form.turmas.length > 0) {
+
+        const matriculas = form.turmas.map((turmaId) => ({
+          aluno_id: alunoId,
+          turma_id: turmaId,
+        }));
+
+        console.log("MATRÍCULAS:", matriculas);
+
+        const { error: erroMatriculas } = await supabase
+          .from("matriculas")
+          .insert(matriculas);
+
+        console.log("ERRO MATRÍCULAS:", erroMatriculas);
+      }
 
       error = resultado.error;
 
@@ -202,7 +279,7 @@ export default function PainelAlunos({
         "Não foi possível salvar o aluno.",
         "error"
       );
-
+      
       return;
     }
     await carregarAlunos();

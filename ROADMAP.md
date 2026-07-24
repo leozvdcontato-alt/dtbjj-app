@@ -1,167 +1,173 @@
-# Roadmap - Tatame Pro
+# Roadmap - DTBJJ App
 
 ## Objetivo
 
-Construir uma plataforma completa de gestão para academias de Jiu-Jitsu.
+Desenvolver um sistema completo para gerenciamento da Dream Team Brazilian Jiu-Jitsu, priorizando a experiência dos professores e administradores.
 
-O foco do Tatame Pro é simplificar o trabalho do professor e melhorar a experiência dos alunos.
-
----
-
-# Fase 1 — MVP
-
-## Gestão
-
-- Cadastro de alunos
-- Cadastro de turmas
-- Controle de presença
-- Dashboard
-- Perfil do aluno
-
-Status
-
-🟢 Em desenvolvimento
+O foco desta versão é exclusivamente a DTBJJ. A transformação em um produto multiacademias (Tatame Pro) será avaliada futuramente.
 
 ---
 
-# Fase 2 — Evolução da Academia
+# Fase 1 - Fundação ✅
 
-## Graduação
-
-- Contador de presenças
-- Controle de graus
-- Próximos graduandos
-- Histórico de graduações
-
-## Relatórios
-
-- Frequência por aluno
-- Frequência por turma
-- Evolução mensal
-- Ranking de presença
+- [x] Login
+- [x] Dashboard
+- [x] Navegação inferior
+- [x] CRUD de alunos
+- [x] CRUD de turmas
+- [x] Vincular alunos às turmas
+- [x] Tela de detalhes da turma
+- [x] Publicação na Vercel
+- [x] PWA instalável
 
 ---
 
-# Fase 3 — Aplicativo do Aluno
+# Fase 2 - Base do Sistema (Atual)
 
-## Login
+Objetivo:
+Garantir que tudo o que já existe funcione corretamente antes de adicionar novas funcionalidades.
 
-Cada aluno possuirá acesso próprio.
+## Alunos
 
-Poderá visualizar:
+- [ ] Corrigir relacionamento Aluno × Turma
+- [ ] Exibir corretamente os alunos dentro da turma
+- [ ] Corrigir consultas ao banco
 
-- Presenças
-- Turmas
-- Graduação
-- Próxima graduação
-- Histórico
+## Chamada
 
----
+- [ ] Criar fluxo real da chamada
+- [ ] Marcar presença
+- [ ] Salvar chamada
+- [ ] Histórico de chamadas
 
-# Fase 4 — Check-in por QR Code
+## Interface
 
-## Objetivo
-
-Automatizar o registro de presença.
-
-Fluxo previsto
-
-Professor
-
-- Cria a turma normalmente
-
-Aluno
-
-- Abre o aplicativo
-- Escaneia o QR Code fixo da academia
-- Realiza check-in
-
-Sistema
-
-- Registra presença automaticamente
-- Relaciona presença à turma aberta
-
-Professor
-
-- Apenas valida ou corrige presenças quando necessário
+- [ ] Alterar "Home" para "Início"
+- [ ] Revisar navegação
+- [ ] Ajustar pequenos bugs de interface
 
 ---
 
-# Fase 5 — Dashboard Inteligente
+# Fase 3 - Usuários
 
-Indicadores
+Objetivo:
+Transformar o sistema em uma plataforma baseada em usuários reais.
 
-- Total de alunos
-- Alunos ativos
-- Presenças do mês
-- Frequência média
-- Próximas graduações
-- Turmas mais movimentadas
-- Alunos inativos
+## Cadastro
 
----
+- [ ] Criar conta
 
-# Fase 6 — Financeiro
+Campos:
 
-- Mensalidades
-- Controle de pagamentos
-- Inadimplência
-- Fluxo de caixa
-- Relatórios financeiros
+- Nome
+- Email
+- CPF
+- Telefone
+- Senha
 
----
+Escolher:
 
-# Fase 7 — Comunicação
-
-- Avisos para turmas
-- Push Notifications
-- WhatsApp
-- E-mail
+- Aluno
+- Professor
 
 ---
 
-# Fase 8 — Professor
+## Solicitação de acesso
 
-Área exclusiva para professores.
-
-Recursos
-
-- Abrir chamada
-- Encerrar chamada
-- Histórico
-- Correção manual de presença
-- Controle de graduação
+- [ ] Enviar solicitação para a DTBJJ
+- [ ] Conta fica pendente
 
 ---
 
-# Fase 9 — Administração
+## Administração
 
-Painel administrativo completo.
+- [ ] Tela de solicitações
+- [ ] Aprovar usuários
+- [ ] Recusar usuários
 
-Recursos
+---
 
-- Usuários
-- Permissões
-- Academias
+## Perfil
+
+- [ ] Meu Perfil
+- [ ] Foto
+- [ ] Alterar dados
+- [ ] Alterar senha
+- [ ] Logout
+
+---
+
+## Cabeçalho
+
+Trocar:
+
+Logo
+
+↓
+
+Por
+
+Foto do usuário
+
+Olá, Leonardo 👋
+
+Professor DTBJJ
+
+---
+
+# Fase 4 - Gestão da Academia
+
+## Alunos
+
+- [ ] Graduação
+- [ ] Histórico
+- [ ] Frequência
+
+## Turmas
+
+- [ ] Horários
+- [ ] Professores
+- [ ] Limite de alunos
+
+## Presença
+
+- [ ] Última chamada
+- [ ] Histórico
+- [ ] Estatísticas
+
+---
+
+# Fase 5 - Experiência
+
+- [ ] Dashboard inteligente
+- [ ] Indicadores
+- [ ] Calendário
+- [ ] Notificações
+- [ ] Melhorias no PWA
+- [ ] Funcionamento offline
+
+---
+
+# Fase 6 - Automações
+
+- [ ] QR Code para check-in
+- [ ] Check-in automático
+- [ ] Presença por QR Code
+- [ ] Relatórios automáticos
+- [ ] Controle de graduação
+- [ ] Alertas
+
+---
+
+# Fase 7 - Futuro
+
+## Somente após validação na DTBJJ
+
+- Multiacademias
+- Tatame Pro
+- Convites
 - Planos
-- Auditoria
-
----
-
-# Fase 10 — SaaS
-
-Transformar o Tatame Pro em um sistema comercial.
-
-## Recursos
-
-- Multiacademia
 - Assinaturas
-- Cobrança automática
-- Gestão de clientes
-- Painel administrativo
-
----
-
-# Visão de longo prazo
-
-O Tatame Pro deve se tornar uma plataforma completa de gestão para academias de Jiu-Jitsu, oferecendo ferramentas que reduzam o trabalho administrativo dos professores, automatizem processos e forneçam informações estratégicas para apoiar o crescimento da academia.
+- Financeiro
+- Aplicativo publicado
+- IA

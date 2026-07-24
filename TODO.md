@@ -1,119 +1,144 @@
-# TODO - Tatame Pro
+# TODO - DTBJJ App
 
-## 🔔 Sistema de Notificações
-
-### Concluído
-
-- [x] Criar componente Toast
-- [x] Melhorar layout do Toast
-- [x] Criar ToastContext
-- [x] Criar ToastProvider
-- [x] Criar hook useToast()
-- [x] Integrar ToastProvider ao projeto
-- [x] Migrar PainelChamada para o Toast global
-
-### Pendente
-
-- [ ] Remover todos os alert() restantes do sistema
-- [ ] Padronizar mensagens de sucesso
-- [ ] Padronizar mensagens de erro
+## 🎯 Objetivo Atual
+Consolidar a base do sistema antes de iniciar novas funcionalidades. O foco é tornar o aplicativo realmente utilizável pelos professores da Dream Team Brazilian Jiu-Jitsu.
 
 ---
 
-# 👨‍🎓 Gestão de Alunos
+# Sprint 1 - Correções e Base do Sistema
 
-## Refatoração
+## [x] Corrigir relacionamento Aluno x Turma
+- Investigar por que alunos vinculados à turma não aparecem na tela da turma.
+- Garantir que o relacionamento esteja consistente no banco.
+- Listar corretamente todos os alunos pertencentes à turma.
 
-### Objetivo
+## [ ] Implementar fluxo real de chamada
+- Exibir apenas os alunos da turma selecionada.
+- Permitir iniciar uma chamada.
+- Marcar presença dos alunos.
+- Salvar a chamada no banco.
+- Criar histórico de chamadas.
 
-Separar responsabilidades do PainelAlunos para reduzir complexidade e facilitar manutenção.
-
-### Estrutura desejada
-
-src/components/
-│
-├── PainelAlunos.jsx
-├── AlunoModal.jsx
-└── AlunoPerfil.jsx
-
----
-
-## Cadastro de Alunos
-
-### Implementar
-
-- [ ] Seleção de múltiplas turmas
-- [ ] Carregar matrículas ao editar aluno
-- [ ] Salvar matrículas ao cadastrar aluno
-- [ ] Atualizar matrículas ao editar aluno
-- [ ] Remover matrículas antigas antes da atualização
+## [ ] Renomear "Home" para "Início"
 
 ---
 
-## Perfil do Aluno
+# Sprint 2 - Usuários e Autenticação
 
-- [ ] Separar componente AlunoPerfil
-- [ ] Exibir turmas do aluno
-- [ ] Exibir estatísticas
-- [ ] Exibir progresso para graduação
+## [ ] Criar fluxo de cadastro
+- Nome
+- Email
+- CPF
+- Telefone
+- Senha
+- Confirmar senha
+- Tipo de usuário (Aluno ou Professor)
 
----
+## [ ] Implementar solicitação de acesso
+Após criar a conta:
+- Usuário envia solicitação.
+- Conta permanece pendente até aprovação.
 
-## Listagem de Alunos
+## [ ] Criar tela de solicitações
+Apenas Administradores poderão:
+- Aprovar usuário.
+- Recusar usuário.
 
-- [ ] Adicionar botão Editar
-- [ ] Adicionar botão Perfil
-- [ ] Adicionar botão Excluir
-- [ ] Melhorar ações da tabela
+## [ ] Criar perfil do usuário
+- Foto
+- Nome
+- Email
+- Telefone
+- CPF
+- Alterar senha
+- Logout
 
----
+## [ ] Personalizar cabeçalho
+Trocar:
 
-# 🥋 Gestão de Turmas
+Logo
+Olá Professor
+Dream Team Brazilian Jiu-Jitsu
 
-- [ ] Migrar para Toast
-- [ ] Remover alert()
-- [ ] Melhorar validações
+Por:
 
----
+(Foto do usuário)
 
-# 📋 Chamadas
+Olá, {Nome}
 
-## Corrigir
+Professor DTBJJ
+Aluno DTBJJ
+Administrador DTBJJ
 
-- [ ] Validar exibição de todos os alunos da turma
-- [ ] Validar funcionamento após implementação das matrículas
-
----
-
-# 🏠 Dashboard
-
-## Corrigir
-
-- [ ] Buscar última chamada diretamente do Supabase
-- [ ] Atualizar card "Última chamada"
-- [ ] Criar card "Próximas graduações"
-
----
-
-# ⚙ Arquitetura
-
-## Organização
-
-- [ ] Separar componentes grandes
-- [ ] Reduzir componentes acima de 400 linhas
-- [ ] Centralizar consultas em services
-- [ ] Centralizar notificações
-- [ ] Padronizar tratamento de erros
+Caso não exista foto, utilizar avatar padrão.
 
 ---
 
-# 🧪 Testes
+# Sprint 3 - Estrutura do Banco
 
-Após cada refatoração validar:
+## [ ] Revisar modelagem atual
+Analisar as tabelas:
+- usuários
+- alunos
+- turmas
+- presenças
 
-- [ ] Cadastro de aluno
-- [ ] Edição de aluno
-- [ ] Matrículas
-- [ ] Chamada
-- [ ] Dashboard
-- [ ] Toasts
+Entender todos os relacionamentos antes de qualquer alteração estrutural.
+
+## [ ] Definir arquitetura definitiva de usuários
+Avaliar a criação de uma tabela central de perfis para evitar duplicação de informações.
+
+---
+
+# Sprint 4 - Melhorias de UX
+
+## [ ] Tela "Mais"
+Adicionar:
+- Meu Perfil
+- Solicitações (Administrador)
+- Configurações
+- Sair
+
+## [ ] Melhorar experiência mobile
+- Revisar espaçamentos
+- Revisar navegação
+- Revisar feedbacks visuais
+
+---
+
+# Sprint 5 - Funcionalidades Futuras
+
+## [ ] QR Code para check-in
+
+## [ ] Graduação automática
+
+## [ ] Relatórios
+
+## [ ] Dashboard
+
+## [ ] Notificações
+
+## [ ] Funcionamento Offline (PWA)
+
+---
+
+# Ideias
+
+- Cadastro por solicitação de acesso.
+- Possibilidade futura de convite por link.
+- Usuário cria sua própria conta; administradores apenas aprovam.
+- Evitar que professores precisem cadastrar dados de alunos.
+- Manter o foco exclusivamente na Dream Team Brazilian Jiu-Jitsu nesta versão.
+
+---
+
+# Fora do escopo (neste momento)
+
+- Multiacademias.
+- SaaS Tatame Pro.
+- Planos e assinaturas.
+- Marketplace.
+- Convites entre academias.
+- Integrações externas.
+
+Esses itens serão avaliados apenas após a versão da DTBJJ estar madura e validada.
