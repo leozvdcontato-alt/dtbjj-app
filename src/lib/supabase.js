@@ -7,7 +7,14 @@ const supabaseKey =
   "sb_publishable_uFEHMHKZd6CIiZgrf1ip5A_0AF-FLYT";
 
 export const supabase =
-  createClient(
-    supabaseUrl,
-    supabaseKey
-  );
+createClient(
+  supabaseUrl,
+  supabaseKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  }
+);
