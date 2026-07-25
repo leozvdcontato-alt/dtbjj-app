@@ -1,63 +1,41 @@
 import { useState } from "react";
+import { supabase } from "../lib/supabase";
 
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbxY8ksEC6xEX_jvLecF1gmc6xPIAqb5LK686RginNGMzMM6xAi_gJfzkyCniHWzvdGJiw/exec";
-
-export default function Login({ setUser }) {
-
-  const [cpf, setCpf] = useState("");
+export default function Login() {
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
 
-  async function handleLogin() {
+async function handleLogin() {
+  console.log("Iniciando login");
 
-    try {
+  try {
+    setLoading(true);
 
-      setLoading(true);
-      setErro("");
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
 
-      const response = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "login",
-          cpf,
-          senha,
-        }),
-      });
+    console.log("DATA:", data);
+    console.log("ERROR:", error);
 
-      const data = await response.json();
-
-      if (data.success) {
-
-        setUser(data);
-
-      } else {
-
-        setErro(data.error);
-
-      }
-
-    } catch (err) {
-
-      console.error(err);
-      setErro("Erro ao conectar");
-
-    } finally {
-
-      setLoading(false);
-
+    if (error) {
+      setErro(error.message);
     }
+  } catch (err) {
+    console.error(err);
+    setErro(err.message);
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
-
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-
       <div className="w-full max-w-sm">
-
         <div className="text-center mb-8">
-
           <img
             src="/dtbjjapplogo.png"
             className="w-36 h-36 object-contain mx-auto mb-4"
@@ -70,30 +48,23 @@ export default function Login({ setUser }) {
           <p className="text-gray-400 mt-2">
             Controle de Presença
           </p>
-
         </div>
 
         <div className="bg-[#111111] border border-red-900/30 rounded-3xl p-6">
-
           <div className="mb-4">
-
             <label className="text-sm text-gray-400 block mb-2">
-              CPF
+              E-mail
             </label>
 
             <input
-              type="text"
-              value={cpf}
-              onChange={(e) =>
-                setCpf(e.target.value)
-              }
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full h-12 rounded-xl bg-[#1A1A1A] px-4 outline-none"
             />
-
           </div>
 
           <div className="mb-6">
-
             <label className="text-sm text-gray-400 block mb-2">
               Senha
             </label>
@@ -101,20 +72,15 @@ export default function Login({ setUser }) {
             <input
               type="password"
               value={senha}
-              onChange={(e) =>
-                setSenha(e.target.value)
-              }
+              onChange={(e) => setSenha(e.target.value)}
               className="w-full h-12 rounded-xl bg-[#1A1A1A] px-4 outline-none"
             />
-
           </div>
 
           {erro && (
-
             <div className="bg-red-900/30 text-red-300 text-sm rounded-xl p-3 mb-4">
               {erro}
             </div>
-
           )}
 
           <button
@@ -124,11 +90,8 @@ export default function Login({ setUser }) {
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }
