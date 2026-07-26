@@ -24,3 +24,46 @@ export async function criarChamada({
 
   return data;
 }
+
+export async function buscarUltimaChamada() {
+  const { data: chamada, error } = await supabase
+    .from("chamadas")
+    .select(`
+      id,
+      data,
+      horario,
+      turma_id,
+      turmas (
+        nome
+      )
+    `)
+    .order("id", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) throw error;
+
+  const { count: presentes } = await supabase
+    .from("presencas")
+    .select("*", {
+      count: "exact",
+      head: true,
+    })
+    .eq("chamada_id", chamada.id);
+
+  const { count: matriculados } = await supabase
+    .from("matriculas")
+    .select("*", {
+      count: "exact",
+      head: true,
+    })
+    .eq("turma_id", chamada.turma_id);
+
+  return {
+    turma: chamada.turmas.nome,
+    data: chamada.data,
+    horario: chamada.horario,
+    presentes: presentes || 0,
+    matriculados: matriculados || 0,
+  };
+}

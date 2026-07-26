@@ -3,6 +3,36 @@ import { supabase } from "../lib/supabase";
 import AlunoModal from "./AlunoModal";
 import AlunoPerfil from "./AlunoPerfil";
 import { useToast } from "@/contexts/ToastContext";
+import Faixa from "./Faixa";
+import { Search, X } from "lucide-react";
+
+function normalizarFaixa(faixa) {
+  const mapa = {
+    Branca: "branca",
+    Cinza: "cinza",
+    Amarela: "amarela",
+    Laranja: "laranja",
+    Verde: "verde",
+    Azul: "azul",
+    Roxa: "roxa",
+    Marrom: "marrom",
+    Preta: "preta",
+
+    "Cinza e Branca": "cinza_branca",
+    "Cinza e Preta": "cinza_preta",
+
+    "Amarela e Branca": "amarela_branca",
+    "Amarela e Preta": "amarela_preta",
+
+    "Laranja e Branca": "laranja_branca",
+    "Laranja e Preta": "laranja_preta",
+
+    "Verde e Branca": "verde_branca",
+    "Verde e Preta": "verde_preta",
+  };
+
+  return mapa[faixa] || "branca";
+}
 
 export default function PainelAlunos({
   turmas,
@@ -11,6 +41,10 @@ export default function PainelAlunos({
 
   const [alunos, setAlunos] =
     useState([]);
+
+    const [busca, setBusca] = useState("");
+
+    const [turmaSelecionada, setTurmaSelecionada] = useState("Todos");
 
   const [modal, setModal] =
     useState(false);
@@ -40,16 +74,20 @@ export default function PainelAlunos({
 
   async function carregarAlunos() {
 
-    const { data, error } = await supabase
-      .from("alunos")
-      .select("*")
-      .order("nome");
-
+const { data, error } = await supabase
+  .from("alunos")
+  .select(`
+    *,
+    matriculas(*)
+  `)
+  .order("nome");
+  
     if (error) {
       console.error(error);
       return;
     }
 
+console.log(data);
     setAlunos(data);
 
   }
@@ -293,196 +331,158 @@ mostrarToast(
   "success"
 );
   }
+
+  const alunosFiltrados = alunos.filter((aluno) =>
+  aluno.nome.toLowerCase().includes(busca.toLowerCase())
+);
   return (
 
     <>
 
-      <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 mt-6">
+<div className="mt-6 px-2">
 
-        <div className="flex items-center justify-between mb-5">
+<div className="flex items-center justify-between mb-5">
 
-          <button
-            onClick={() => setTela("home")}
-            className="text-gray-400 hover:text-white text-sm"
-          >
-            ← Voltar
-          </button>
+  <h2 className="text-2xl font-bold">
+  Alunos
+  <span className="ml-2 text-lg text-gray-400 font-medium">
+    ({alunos.length})
+  </span>
+</h2>
 
-          <h2 className="text-xl font-bold">
-            Alunos
-          </h2>
+  <button
+    onClick={abrirNovoAluno}
+    className="h-10 px-4 bg-red-700 hover:bg-red-600 rounded-xl text-sm font-semibold"
+  >
+    + Novo
+  </button>
 
-          <button
-            onClick={abrirNovoAluno}
-            className="h-10 px-4 bg-red-700 hover:bg-red-600 rounded-xl text-sm font-semibold"
-          >
-            + Novo
-          </button>
+</div>
 
-        </div>
+<div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar">
 
-        <div className="overflow-auto">
+<div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar">
 
-          <table className="w-full min-w-[900px]">
+  <button
+    onClick={() => setTurmaSelecionada("Todos")}
+    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+      turmaSelecionada === "Todos"
+        ? "bg-red-700 text-white"
+        : "bg-[#171717] text-gray-300"
+    }`}
+  >
+    Todos
+  </button>
 
-            <thead>
+  {turmas.map((turma) => (
 
-              <tr className="border-b border-white/10 text-gray-400 text-left">
+    <button
+      key={turma.id}
+      onClick={() => setTurmaSelecionada(turma.id)}
+      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+        turmaSelecionada === turma.id
+          ? "bg-red-700 text-white"
+          : "bg-[#171717] text-gray-300"
+      }`}
+    >
+      {turma.nome}
+    </button>
 
-                <th className="pb-4">
-                  Nome
-                </th>
+  ))}
 
-                <th className="pb-4">
-                  CPF
-                </th>
+</div>
+</div>
 
-                <th className="pb-4">
-                  Telefone
-                </th>
+<div className="space-y-2">
 
-                <th className="pb-4">
-                  Faixa
-                </th>
+{alunosFiltrados.length === 0 ? (
 
-                <th className="pb-4">
-                  Graus
-                </th>
+  <div className="py-10 text-center text-sm text-gray-500">
+    Nenhum aluno encontrado.
+  </div>
 
-                <th className="pb-4">
-                  Status
-                </th>
+) : (
 
-                <th className="pb-4">
-                  Ações
-                </th>
+  alunosFiltrados.map((aluno) => (
 
-              </tr>
+    <button
+      key={aluno.id}
+      onClick={() => abrirPerfil(aluno)}
+      className="w-full text-left bg-[#171717] hover:bg-[#1d1d1d] rounded-2xl px-4 py-3 transition-colors"
+    >
 
-            </thead>
+      <div className="flex items-center justify-between">
 
-            <tbody>
+        <div>
 
-              {alunos.map((aluno, index) => (
+          <h3 className="font-semibold text-base">
+            {aluno.nome}
+          </h3>
 
-                <tr
-                  key={index}
-                  className="border-b border-white/5"
-                >
+          <div className="flex items-center gap-2 mt-1">
 
-                  <td className="py-4">
-                    {aluno.nome}
-                  </td>
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                aluno.status === "Ativo"
+                  ? "bg-green-900/40 text-green-400"
+                  : "bg-red-900/40 text-red-400"
+              }`}
+            >
+              {aluno.status}
+            </span>
 
-                  <td className="py-4">
-                    {aluno.cpf}
-                  </td>
+            <Faixa
+              faixa={normalizarFaixa(aluno.faixa)}
+              graus={aluno.graus}
+            />
 
-                  <td className="py-4">
-                    {aluno.telefone}
-                  </td>
-
-                  <td className="py-4">
-
-                    {aluno.faixa === "Branca" && (
-                      <span className="px-3 py-1 rounded-lg bg-white text-black text-sm font-bold">
-                        BRANCA
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Cinza" && (
-                      <span className="px-3 py-1 rounded-lg bg-gray-500 text-white text-sm font-bold">
-                        CINZA
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Amarela" && (
-                      <span className="px-3 py-1 rounded-lg bg-yellow-400 text-black text-sm font-bold">
-                        AMARELA
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Laranja" && (
-                      <span className="px-3 py-1 rounded-lg bg-orange-500 text-white text-sm font-bold">
-                        LARANJA
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Verde" && (
-                      <span className="px-3 py-1 rounded-lg bg-green-600 text-white text-sm font-bold">
-                        VERDE
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Azul" && (
-                      <span className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm font-bold">
-                        AZUL
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Roxa" && (
-                      <span className="px-3 py-1 rounded-lg bg-purple-600 text-white text-sm font-bold">
-                        ROXA
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Marrom" && (
-                      <span className="px-3 py-1 rounded-lg bg-amber-800 text-white text-sm font-bold">
-                        MARROM
-                      </span>
-                    )}
-
-                    {aluno.faixa === "Preta" && (
-                      <span className="px-3 py-1 rounded-lg bg-black border border-white/20 text-white text-sm font-bold">
-                        PRETA
-                      </span>
-                    )}
-
-                  </td>
-
-                  <td className="py-4">
-                    {aluno.graus}
-                  </td>
-
-                  <td className="py-4">
-
-                    <span
-                      className={
-                        aluno.status === "Ativo"
-                          ? "bg-green-900/40 text-green-400 px-3 py-1 rounded-full text-sm"
-                          : "bg-red-900/40 text-red-400 px-3 py-1 rounded-full text-sm"
-                      }
-                    >
-                      {aluno.status}
-                    </span>
-
-                  </td>
-
-                  <td className="py-4">
-
-                    <button
-                      onClick={() =>
-                        abrirPerfil(aluno)
-                      }
-                      className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm"
-                    >
-                      Perfil
-                    </button>
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
+          </div>
 
         </div>
+
+        <span className="text-gray-500 text-xl">
+          ›
+        </span>
 
       </div>
 
+    </button>
+
+  ))
+
+)}
+
+</div>
+
+<div className="h-24"></div>
+
+      </div>
+<div className="fixed bottom-28 left-0 right-0 px-4 z-30">
+  <div className="relative max-w-lg mx-auto">
+
+    <Search
+      size={18}
+      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+    />
+
+    <input
+      type="text"
+      placeholder="Buscar aluno..."
+      value={busca}
+      onChange={(e) => setBusca(e.target.value)}
+className="w-full rounded-full bg-[#171717] border border-white/10 ring-1 ring-white/5 pl-11 pr-11 py-3 text-sm text-white placeholder:text-gray-500 shadow-2xl focus:outline-none focus:border-red-600 transition-colors"    />
+
+    {busca && (
+      <button
+        onClick={() => setBusca("")}
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+      >
+        <X size={18} />
+      </button>
+    )}
+
+  </div>
+</div>
       <AlunoModal
         modal={modal}
         editando={editando}

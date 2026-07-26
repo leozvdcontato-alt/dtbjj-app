@@ -4,8 +4,11 @@ import { criarChamada } from "@/services/chamadas";
 import { registrarPresencas } from "@/services/presencas";
 import { useToast } from "@/contexts/ToastContext";
 
-export default function PainelChamada({ turmas }) {
-  const { mostrarToast } = useToast();
+export default function PainelChamada({
+  turmas,
+  onChamadaRegistrada,
+}) {
+    const { mostrarToast } = useToast();
 
   const [modoChamada, setModoChamada] = useState(false);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
@@ -70,6 +73,7 @@ export default function PainelChamada({ turmas }) {
       );
 
       mostrarToast("Chamada registrada com sucesso!");
+      onChamadaRegistrada?.();
 
       setModoChamada(false);
       setPresentes([]);
