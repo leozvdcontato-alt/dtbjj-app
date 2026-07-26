@@ -208,7 +208,7 @@ setCodigo("");
               type="text"
               value={codigo}
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-              placeholder="Ex.: DTBJJ2026"
+              placeholder="Ex.: ABCDE1234"
               className="w-full h-12 rounded-xl bg-[#1A1A1A] px-4 outline-none text-white"
             />
           </div>
