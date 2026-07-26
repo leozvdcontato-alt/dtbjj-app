@@ -1,36 +1,38 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import CadastroModal from "../components/CadastroModal";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
+  const [modalCadastro, setModalCadastro] = useState(false);
 
-async function handleLogin() {
-  console.log("Iniciando login");
+  async function handleLogin() {
+    console.log("Iniciando login");
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: senha,
-    });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
 
-    console.log("DATA:", data);
-    console.log("ERROR:", error);
+      console.log("DATA:", data);
+      console.log("ERROR:", error);
 
-    if (error) {
-      setErro(error.message);
+      if (error) {
+        setErro(error.message);
+      }
+    } catch (err) {
+      console.error(err);
+      setErro(err.message);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error(err);
-    setErro(err.message);
-  } finally {
-    setLoading(false);
   }
-}
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
@@ -39,6 +41,7 @@ async function handleLogin() {
           <img
             src="/dtbjjapplogo.png"
             className="w-36 h-36 object-contain mx-auto mb-4"
+            alt="DTBJJ"
           />
 
           <h1 className="text-4xl font-bold">
@@ -46,11 +49,12 @@ async function handleLogin() {
           </h1>
 
           <p className="text-gray-400 mt-2">
-            Controle de Presença
+            Bem vindo à Dream Team!
           </p>
         </div>
 
         <div className="bg-[#111111] border border-red-900/30 rounded-3xl p-6">
+
           <div className="mb-4">
             <label className="text-sm text-gray-400 block mb-2">
               E-mail
@@ -90,8 +94,30 @@ async function handleLogin() {
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
+
+          <div className="mt-6 pt-6 border-t border-white/10 text-center">
+
+            <p className="text-sm text-gray-400">
+              Não possui uma conta?
+            </p>
+
+            <button
+  onClick={() => setModalCadastro(true)}
+  className="mt-2 text-red-500 hover:text-red-400 font-semibold transition-colors"
+>
+  Criar conta
+</button>
+
+          </div>
+
         </div>
       </div>
+
+      <CadastroModal
+  aberto={modalCadastro}
+  fechar={() => setModalCadastro(false)}
+/>
+
     </div>
   );
 }
