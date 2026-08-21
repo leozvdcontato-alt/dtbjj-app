@@ -74,16 +74,16 @@ export default function CadastroModal({ aberto, fechar }) {
     setLoading(true);
 
     try {
-      const { data: academia, error: erroAcademia } = await supabase
-        .from("academias")
-        .select("id, nome")
-        .eq("codigo_convite", codigo)
-        .eq("status", "Ativa")
-        .maybeSingle();
+      const { data: academias, error: erroAcademia } = await supabase.rpc(
+        "validar_codigo_academia",
+        { p_codigo: codigo }
+      );
 
       if (erroAcademia) {
         throw erroAcademia;
       }
+
+      const academia = academias?.[0];
 
       if (!academia) {
         setErro("Código da academia inválido.");
@@ -113,7 +113,7 @@ export default function CadastroModal({ aberto, fechar }) {
 
       limparFormulario();
       setSucesso(
-        `Conta criada para ${academia.nome}. Agora você já pode fazer login.`
+        `Conta criada para ${academia.nome}. Se a confirmação por e-mail estiver habilitada, confirme o endereço antes de entrar.`
       );
     } catch (error) {
       console.error("Erro ao criar conta:", error);
