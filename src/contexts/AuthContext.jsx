@@ -1,30 +1,47 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [erroPerfil, setErroPerfil] = useState("");
 
-  async function carregarUsuario(authId, email) {
-    const { data, error } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("auth_id", authId)
-      .single();
-
-    if (error) {
-      console.error(error);
+  async function carregarUsuario(authUser) {
+    if (!authUser) {
+      setUsuario(null);
+      setErroPerfil("");
       return null;
     }
 
-    setUsuario({
-      ...data,
-      email,
-    });
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("auth_id", authUser.id)
+      .maybeSingle();
 
-    return data;
+    if (error) {
+      console.error("Erro ao carregar perfil:", error);
+      setUsuario(null);
+      setErroPerfil("Não foi possível carregar seu perfil.");
+      return null;
+    }
+
+    if (!data) {
+      setUsuario(null);
+      setErroPerfil("Seu acesso ainda não possui um perfil válido.");
+      return null;
+    }
+
+    const perfil = {
+      ...data,
+      email: authUser.email,
+    };
+
+    setUsuario(perfil);
+    setErroPerfil("");
+    return perfil;
   }
 
   async function atualizarUsuario() {
@@ -32,76 +49,89 @@ export function AuthProvider({ children }) {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session?.user) return;
+    if (!session?.user) {
+      setUsuario(null);
+      return null;
+    }
 
-    await carregarUsuario(
-      session.user.id,
-      session.user.email
-    );
+    return carregarUsuario(session.user);
   }
 
-  const login = (dados) => {
-    setUsuario(dados);
-  };
-
-  const logout = async () => {
+  async function logout() {
     await supabase.auth.signOut();
     setUsuario(null);
-  };
+    setErroPerfil("");
+  }
 
   useEffect(() => {
+    let ativo = true;
+
     async function carregarSessao() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
+      if (!ativo) return;
+
       if (session?.user) {
-        await carregarUsuario(
-          session.user.id,
-          session.user.email
-        );
+        await carregarUsuario(session.user);
       } else {
         setUsuario(null);
+        setErroPerfil("");
       }
 
-      setLoading(false);
+      if (ativo) setLoading(false);
     }
 
     carregarSessao();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        await carregarUsuario(
-          session.user.id,
-          session.user.email
-        );
-      } else {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!ativo) return;
+
+      if (!session?.user) {
         setUsuario(null);
+        setErroPerfil("");
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
+      setLoading(true);
+
+      setTimeout(async () => {
+        if (!ativo) return;
+        await carregarUsuario(session.user);
+        if (ativo) setLoading(false);
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      ativo = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        usuario,
-        loading,
-        login,
-        logout,
-        atualizarUsuario,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      usuario,
+      loading,
+      erroPerfil,
+      logout,
+      atualizarUsuario,
+    }),
+    [usuario, loading, erroPerfil]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const contexto = useContext(AuthContext);
+
+  if (!contexto) {
+    throw new Error("useAuth deve ser usado dentro de AuthProvider");
+  }
+
+  return contexto;
 }
