@@ -25,14 +25,14 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 - [x] Impedir presença duplicada por chamada/aluno.
 - [x] Garantir unicidade de usuarios.auth_id.
 - [x] Criar trigger base auth.users -> usuarios.
-- [ ] Ajustar cadastro para enviar nome e academia_id como metadata.
-- [ ] Remover INSERT manual em usuarios do frontend.
-- [ ] Tratar sessão autenticada sem perfil de forma segura.
-- [ ] Revisar políticas RLS de usuarios para performance.
+- [x] Ajustar cadastro para enviar nome e academia_id como metadata.
+- [x] Remover INSERT manual em usuarios do frontend.
+- [x] Tratar sessão autenticada sem perfil de forma segura.
+- [x] Revisar políticas RLS de usuarios para performance.
 - [ ] Ativar proteção contra senhas vazadas no Supabase Auth.
 
 ## Qualidade
-- [ ] Remover console.log e código de debug.
+- [ ] Remover console.log e código de debug do restante do app.
 - [ ] Remover arquivos de teste e assets padrão não utilizados.
 - [ ] Padronizar tratamento de erros.
 - [ ] Padronizar loading, empty state e feedback de sucesso.
@@ -47,7 +47,7 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 - [ ] Criar services/chamadas.js.
 - [ ] Criar services/usuarios.js.
 - [ ] Centralizar regras de negócio fora dos componentes visuais.
-- [ ] Revisar AuthContext.
+- [ ] Revisar AuthContext por completo após definição de permissões.
 - [ ] Criar estrutura de permissões por cargo.
 - [ ] Criar componentes reutilizáveis de PageHeader, Card, EmptyState, LoadingState, SearchField e Modal.
 
@@ -74,9 +74,9 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 
 # Fase 3 - Cadastro e acesso
 
-- [ ] Redesenhar tela de login.
-- [ ] Finalizar criação de conta.
-- [ ] Validar código da academia.
+- [x] Remover logs sensíveis do cadastro/login.
+- [x] Finalizar criação técnica da conta com trigger de perfil.
+- [x] Validar código da academia.
 - [ ] Exibir academia reconhecida antes de enviar cadastro.
 - [ ] Criar fluxo de confirmação de email quando aplicável.
 - [ ] Criar recuperação de senha.
@@ -176,8 +176,8 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 - [ ] Testar aluno x turma.
 - [ ] Testar chamada e presença.
 - [ ] Revisar logs de produção.
-- [ ] Criar fluxo branch -> preview -> produção.
-- [ ] Documentar mudanças de banco via migrations.
+- [x] Criar fluxo branch -> preview -> produção.
+- [x] Documentar mudanças de banco via migrations.
 - [ ] Revisar Supabase Security Advisor antes de releases.
 
 ---
