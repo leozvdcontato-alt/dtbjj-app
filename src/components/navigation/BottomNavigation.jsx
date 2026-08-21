@@ -1,81 +1,54 @@
-import { House, Users, GraduationCap, Ellipsis } from "lucide-react";
+import {
+  CalendarCheck2,
+  ClipboardCheck,
+  Ellipsis,
+  GraduationCap,
+  House,
+  Users,
+} from "lucide-react";
+import { ehAluno } from "@/lib/permissoes";
 
-export default function BottomNavigation({ tela, setTela }) {
+const ITENS_ALUNO = [
+  { pagina: "home", rotulo: "Início", Icone: House },
+  { pagina: "turmas", rotulo: "Turmas", Icone: GraduationCap },
+  { pagina: "frequencia", rotulo: "Frequência", Icone: CalendarCheck2 },
+  { pagina: "mais", rotulo: "Mais", Icone: Ellipsis },
+];
+
+const ITENS_GESTAO = [
+  { pagina: "home", rotulo: "Início", Icone: House },
+  { pagina: "alunos", rotulo: "Alunos", Icone: Users },
+  { pagina: "chamada", rotulo: "Chamada", Icone: ClipboardCheck },
+  { pagina: "turmas", rotulo: "Turmas", Icone: GraduationCap },
+  { pagina: "mais", rotulo: "Mais", Icone: Ellipsis },
+];
+
+export default function BottomNavigation({ tela, setTela, usuario }) {
+  const itens = ehAluno(usuario) ? ITENS_ALUNO : ITENS_GESTAO;
+
   return (
-    <nav className="fixed bottom-0 left-0 w-full h-20 bg-zinc-950 border-t border-zinc-800 px-2 shadow-2xl">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-3xl items-center justify-around">
+        {itens.map(({ pagina, rotulo, Icone }) => {
+          const ativo = tela.pagina === pagina;
 
-      <div className="flex items-center justify-around h-full max-w-5xl mx-auto">
-
-        <button
-onClick={() =>
-  setTela({
-    pagina: "home",
-    turma: null,
-  })
-}
-          className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-tela.pagina === "home"
-              ? "bg-red-900/30 text-red-500"
-              : "text-zinc-400 hover:text-white"
-          }`}
-        >
-          <House size={22} />
-          <span className="text-xs font-medium">Home</span>
-        </button>
-
-        <button
-onClick={() =>
-  setTela({
-    pagina: "alunos",
-    turma: null,
-  })
-}
-          className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-tela.pagina === "alunos"
-              ? "bg-red-900/30 text-red-500"
-              : "text-zinc-400 hover:text-white"
-          }`}
-        >
-          <Users size={22} />
-          <span className="text-xs font-medium">Alunos</span>
-        </button>
-
-        <button
-onClick={() =>
-  setTela({
-    pagina: "turmas",
-    turma: null,
-  })
-}
-          className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-tela.pagina === "turmas"
-              ? "bg-red-900/30 text-red-500"
-              : "text-zinc-400 hover:text-white"
-          }`}
-        >
-          <GraduationCap size={22} />
-          <span className="text-xs font-medium">Turmas</span>
-        </button>
-
-        <button
-onClick={() =>
-  setTela({
-    pagina: "mais",
-    turma: null,
-  })
-}
-          className={`flex-1 mx-1 py-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
-tela.pagina === "mais"
-              ? "bg-red-900/30 text-red-500"
-              : "text-zinc-400 hover:text-white"
-          }`}
-        >
-          <Ellipsis size={22} />
-          <span className="text-xs font-medium">Mais</span>
-        </button>
-
+          return (
+            <button
+              key={pagina}
+              type="button"
+              onClick={() => setTela({ pagina, turma: null })}
+              className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-xs font-medium transition ${
+                ativo ? "text-red-500" : "text-zinc-500 active:text-zinc-200"
+              }`}
+            >
+              <div className={`rounded-xl p-1.5 transition ${ativo ? "bg-red-950/50" : ""}`}>
+                <Icone size={20} strokeWidth={ativo ? 2.4 : 2} />
+              </div>
+              <span className="truncate">{rotulo}</span>
+            </button>
+          );
+        })}
       </div>
-
     </nav>
   );
 }
