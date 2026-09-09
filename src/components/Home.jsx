@@ -1,157 +1,138 @@
 import { useEffect, useState } from "react";
-
-import PainelChamada from "./PainelChamada";
-
+import {
+  ArrowRight,
+  CalendarCheck2,
+  ClipboardCheck,
+  GraduationCap,
+  Users,
+} from "lucide-react";
 import { buscarUltimaChamada } from "@/services/chamadas";
 
-export default function Home({
-  turmas,
-}) {
+function formatarData(data, horario) {
+  if (!data) return "Data não informada";
 
-  const [ultimaChamada, setUltimaChamada] =
-    useState(null);
-
-  useEffect(() => {
-    carregarUltimaChamada();
-  }, []);
-
-  function formatarData(data, horario) {
   const hoje = new Date();
   const chamada = new Date(`${data}T00:00:00`);
+  const inicioHoje = new Date();
+  inicioHoje.setHours(0, 0, 0, 0);
+  const diff = Math.floor((inicioHoje.getTime() - chamada.getTime()) / 86400000);
 
-  const diff =
-    Math.floor(
-      (hoje.setHours(0, 0, 0, 0) -
-        chamada.getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
+  if (diff === 0) return `Hoje${horario ? ` às ${horario}` : ""}`;
+  if (diff === 1) return `Ontem${horario ? ` às ${horario}` : ""}`;
 
-  if (diff === 0) {
-    return `Hoje às ${horario}`;
-  }
-
-  if (diff === 1) {
-    return `Ontem às ${horario}`;
-  }
-
-  const [ano, mes, dia] = data.split("-");
-
-  return `${dia}/${mes} às ${horario}`;
+  const [, mes, dia] = data.split("-");
+  return `${dia}/${mes}${horario ? ` às ${horario}` : ""}`;
 }
 
-function corDaBarra(percentual) {
-  if (percentual < 50) {
-    return "bg-red-600";
-  }
+export default function Home({ alunos, turmas, setTela }) {
+  const [ultimaChamada, setUltimaChamada] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (percentual < 75) {
-    return "bg-yellow-500";
-  }
+  useEffect(() => {
+    let ativo = true;
 
-  return "bg-green-600";
-}
-
-  async function carregarUltimaChamada() {
-    try {
-      const chamada =
-        await buscarUltimaChamada();
-
-      setUltimaChamada(chamada);
-    } catch {
-      setUltimaChamada(null);
+    async function carregar() {
+      try {
+        const chamada = await buscarUltimaChamada();
+        if (ativo) setUltimaChamada(chamada);
+      } catch {
+        if (ativo) setUltimaChamada(null);
+      } finally {
+        if (ativo) setLoading(false);
+      }
     }
-  }
+
+    carregar();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  const alunosAtivos = alunos.filter((aluno) => aluno.status === "Ativo").length;
 
   return (
-    <div className="space-y-5">
-
-      <PainelChamada
-  turmas={turmas}
-  onChamadaRegistrada={carregarUltimaChamada}
-/>
-
-      <div className="bg-[#111111] border border-white/10 rounded-2xl p-5">
-
-        <div className="flex items-center gap-2 mb-3">
-
-          <span className="text-xl">
-            📅
-          </span>
-
-          <h2 className="text-lg font-bold">
-            Última chamada
-          </h2>
-
-        </div>
-
-        {!ultimaChamada ? (
-
-          <p className="text-sm text-gray-400">
-            Nenhuma chamada realizada.
-          </p>
-
-        ) : (
-
-          <>
-
-            <h3 className="text-xl font-bold">
-              {ultimaChamada.turma}
-            </h3>
-
-            <p className="text-gray-400 mt-1">
-  {formatarData(
-    ultimaChamada.data,
-    ultimaChamada.horario
-  )}
-</p>
-
-            <p className="mt-4 font-semibold">
-  {ultimaChamada.presentes}
-  {" de "}
-  {ultimaChamada.matriculados}
-  {" alunos presentes"}
-  {" • "}
-  {Math.round(
-    ultimaChamada.matriculados === 0
-      ? 0
-      : (ultimaChamada.presentes /
-          ultimaChamada.matriculados) *
-          100
-  )}
-  %
-</p>
-
-            <div className="w-full bg-zinc-800 rounded-full h-2 mt-3">
-
-              <div
-  className={`${corDaBarra(
-    Math.round(
-      ultimaChamada.matriculados === 0
-        ? 0
-        : (ultimaChamada.presentes /
-            ultimaChamada.matriculados) *
-            100
-    )
-  )} h-2 rounded-full transition-all duration-500`}
-  style={{
-    width: `${
-      ultimaChamada.matriculados === 0
-        ? 0
-        : (ultimaChamada.presentes /
-            ultimaChamada.matriculados) *
-            100
-    }%`,
-  }}
-/>
-
-            </div>
-
-          </>
-
-        )}
-
+    <div className="space-y-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
+          Visão geral
+        </p>
+        <h2 className="mt-1 text-2xl font-bold">Academia hoje</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Acesso rápido ao que precisa acontecer no tatame.
+        </p>
       </div>
 
+      <section className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setTela({ pagina: "alunos", turma: null })}
+          className="rounded-3xl border border-white/10 bg-[#121212] p-4 text-left transition active:scale-[0.99]"
+        >
+          <Users size={20} className="text-red-500" />
+          <p className="mt-5 text-3xl font-bold">{alunosAtivos}</p>
+          <p className="mt-1 text-xs text-zinc-500">Alunos ativos</p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTela({ pagina: "turmas", turma: null })}
+          className="rounded-3xl border border-white/10 bg-[#121212] p-4 text-left transition active:scale-[0.99]"
+        >
+          <GraduationCap size={20} className="text-red-500" />
+          <p className="mt-5 text-3xl font-bold">{turmas.length}</p>
+          <p className="mt-1 text-xs text-zinc-500">Turmas</p>
+        </button>
+      </section>
+
+      <button
+        type="button"
+        onClick={() => setTela({ pagina: "chamada", turma: null })}
+        className="flex w-full items-center justify-between rounded-3xl bg-red-700 p-5 text-left text-white transition active:bg-red-800"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-black/20">
+            <ClipboardCheck size={22} />
+          </div>
+          <div>
+            <p className="font-bold">Iniciar chamada</p>
+            <p className="mt-0.5 text-sm text-red-100/80">Escolha uma turma e registre as presenças.</p>
+          </div>
+        </div>
+        <ArrowRight size={20} />
+      </button>
+
+      <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400">
+            <CalendarCheck2 size={20} />
+          </div>
+          <div>
+            <h3 className="font-semibold">Última chamada</h3>
+            <p className="text-sm text-zinc-500">Registro mais recente da academia</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <p className="mt-5 text-sm text-zinc-500">Carregando...</p>
+        ) : !ultimaChamada ? (
+          <p className="mt-5 text-sm text-zinc-500">Nenhuma chamada realizada.</p>
+        ) : (
+          <div className="mt-5 rounded-2xl bg-black/30 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-semibold">{ultimaChamada.turma}</p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {formatarData(ultimaChamada.data, ultimaChamada.horario)}
+                </p>
+              </div>
+              <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-zinc-300">
+                {ultimaChamada.presentes}/{ultimaChamada.matriculados}
+              </span>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
