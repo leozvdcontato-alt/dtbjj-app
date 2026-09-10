@@ -1,21 +1,11 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { X } from "lucide-react";
-import { criarUrlSvg } from "@/services/qrMateriais";
 
 export default function QrStoriesModal({ aberto, svg, nomeLocal, onClose }) {
-  const [url, setUrl] = useState("");
-
-  useEffect(() => {
-    if (!aberto || !svg) {
-      setUrl("");
-      return undefined;
-    }
-
-    const objectUrl = criarUrlSvg(svg);
-    setUrl(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [aberto, svg]);
+  const url = useMemo(
+    () => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : ""),
+    [svg]
+  );
 
   if (!aberto) return null;
 
