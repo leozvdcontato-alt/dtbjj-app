@@ -13,6 +13,7 @@ export default function AlunoPerfil({
   perfilModal,
   perfilAluno,
   editarAluno,
+  podeEditar = false,
   setPerfilModal,
   carregando,
 }) {
@@ -202,17 +203,19 @@ export default function AlunoPerfil({
             Fechar
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setPerfilModal(false);
-              editarAluno(aluno);
-            }}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-red-700 text-sm font-semibold text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-          >
-            <Pencil size={17} />
-            Editar aluno
-          </button>
+          {podeEditar ? (
+            <button
+              type="button"
+              onClick={() => {
+                setPerfilModal(false);
+                editarAluno(aluno);
+              }}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-red-700 text-sm font-semibold text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            >
+              <Pencil size={17} />
+              Editar aluno
+            </button>
+          ) : null}
         </div>
       </section>
     </div>

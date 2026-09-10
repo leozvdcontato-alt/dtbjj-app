@@ -12,7 +12,9 @@ import Faixa from "./Faixa";
 import EmptyState from "./ui/EmptyState";
 import PageHeader from "./ui/PageHeader";
 import SearchField from "./ui/SearchField";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
+import { ehAdministrador } from "@/lib/permissoes";
 import { FAIXAS, normalizarFaixa, rotuloGraus } from "@/lib/faixas";
 import {
   listarAlunos,
@@ -46,6 +48,9 @@ function nomesTurmas(aluno) {
 }
 
 export default function PainelAlunos({ turmas = [] }) {
+  const { usuario } = useAuth();
+  const admin = ehAdministrador(usuario);
+
   const [alunos, setAlunos] = useState([]);
   const [busca, setBusca] = useState("");
   const [turmaSelecionada, setTurmaSelecionada] = useState("todos");
@@ -104,12 +109,15 @@ export default function PainelAlunos({ turmas = [] }) {
   }, []);
 
   function abrirNovoAluno() {
+    if (!admin) return;
     setEditando(null);
     setForm({ ...FORM_INICIAL, turmas: [] });
     setModal(true);
   }
 
   function editarAluno(aluno) {
+    if (!admin) return;
+
     setEditando(aluno);
     setForm({
       nome: aluno.nome || "",
@@ -143,6 +151,7 @@ export default function PainelAlunos({ turmas = [] }) {
 
   async function salvarAluno(event) {
     event.preventDefault();
+    if (!admin) return;
 
     if (!form.nome.trim()) {
       mostrarToast("Informe o nome do aluno.", "error");
@@ -227,19 +236,21 @@ export default function PainelAlunos({ turmas = [] }) {
           title="Alunos"
           subtitle={
             alunos.length === 1
-              ? "1 aluno cadastrado"
-              : alunos.length + " alunos cadastrados"
+              ? "1 aluno disponível"
+              : alunos.length + " alunos disponíveis"
           }
           action={
-            <button
-              type="button"
-              onClick={abrirNovoAluno}
-              className="flex h-11 items-center gap-2 rounded-2xl bg-red-700 px-4 text-sm font-semibold text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">Novo aluno</span>
-              <span className="sm:hidden">Novo</span>
-            </button>
+            admin ? (
+              <button
+                type="button"
+                onClick={abrirNovoAluno}
+                className="flex h-11 items-center gap-2 rounded-2xl bg-red-700 px-4 text-sm font-semibold text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">Novo aluno</span>
+                <span className="sm:hidden">Novo</span>
+              </button>
+            ) : null
           }
         />
 
@@ -361,11 +372,13 @@ export default function PainelAlunos({ turmas = [] }) {
         ) : alunosFiltrados.length === 0 ? (
           <EmptyState
             Icon={UserRound}
-            title={possuiFiltros ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
+            title={possuiFiltros ? "Nenhum aluno encontrado" : "Nenhum aluno disponível"}
             description={
               possuiFiltros
                 ? "Tente ajustar a busca ou os filtros."
-                : "Cadastre o primeiro aluno para começar a organizar as turmas."
+                : admin
+                  ? "Cadastre ou aguarde o primeiro aluno entrar por uma turma."
+                  : "Nenhum aluno das suas turmas está disponível."
             }
             action={
               possuiFiltros ? (
@@ -376,7 +389,7 @@ export default function PainelAlunos({ turmas = [] }) {
                 >
                   Limpar filtros
                 </button>
-              ) : (
+              ) : admin ? (
                 <button
                   type="button"
                   onClick={abrirNovoAluno}
@@ -384,7 +397,7 @@ export default function PainelAlunos({ turmas = [] }) {
                 >
                   Cadastrar aluno
                 </button>
-              )
+              ) : null
             }
           />
         ) : (
@@ -458,21 +471,24 @@ export default function PainelAlunos({ turmas = [] }) {
         )}
       </section>
 
-      <AlunoModal
-        modal={modal}
-        editando={editando}
-        form={form}
-        setForm={setForm}
-        salvarAluno={salvarAluno}
-        setModal={setModal}
-        turmas={turmas}
-        salvando={salvando}
-      />
+      {admin ? (
+        <AlunoModal
+          modal={modal}
+          editando={editando}
+          form={form}
+          setForm={setForm}
+          salvarAluno={salvarAluno}
+          setModal={setModal}
+          turmas={turmas}
+          salvando={salvando}
+        />
+      ) : null}
 
       <AlunoPerfil
         perfilModal={perfilModal}
         perfilAluno={perfilAluno}
         editarAluno={editarAluno}
+        podeEditar={admin}
         setPerfilModal={setPerfilModal}
         carregando={carregandoPerfil}
       />
