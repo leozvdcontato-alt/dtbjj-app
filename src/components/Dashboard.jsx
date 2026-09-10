@@ -34,11 +34,12 @@ const PAGINAS_GESTAO = new Set([
   "chamada",
   "turmas",
   "turma",
+  "locais",
   "mais",
   "perfil",
 ]);
 
-const PAGINAS_ADMIN = ["professores", "locais"];
+const PAGINAS_ADMIN = ["professores"];
 
 export default function Dashboard() {
   const { usuario } = useAuth();
@@ -163,7 +164,7 @@ export default function Dashboard() {
               <TelaTurma turma={tela.turma} setTela={setTela} />
             )}
             {paginaAtual === "professores" && admin && <PainelProfessores />}
-            {paginaAtual === "locais" && admin && <PainelLocais />}
+            {paginaAtual === "locais" && <PainelLocais />}
           </>
         )}
 
