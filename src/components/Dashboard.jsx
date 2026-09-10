@@ -36,30 +36,18 @@ export default function Dashboard() {
   const [tela, setTela] = useState({ pagina: "home", turma: null });
 
   const portalAluno = useAlunoPortal(usuario?.aluno_id, aluno);
+  const paginasPermitidas = aluno ? PAGINAS_ALUNO : PAGINAS_GESTAO;
+  const paginaAtual = paginasPermitidas.has(tela.pagina) ? tela.pagina : "home";
 
   useEffect(() => {
-    const paginasPermitidas = aluno ? PAGINAS_ALUNO : PAGINAS_GESTAO;
-
-    if (!paginasPermitidas.has(tela.pagina)) {
-      setTela({ pagina: "home", turma: null });
-    }
-  }, [aluno, tela.pagina]);
-
-  useEffect(() => {
-    if (aluno) {
-      setAlunos([]);
-      setTurmas([]);
-      return;
-    }
+    if (aluno) return undefined;
 
     let ativo = true;
 
-    async function carregarGestao() {
-      const [resultadoAlunos, resultadoTurmas] = await Promise.all([
-        supabase.from("alunos").select("*").order("nome"),
-        supabase.from("turmas").select("*").order("nome"),
-      ]);
-
+    Promise.all([
+      supabase.from("alunos").select("*").order("nome"),
+      supabase.from("turmas").select("*").order("nome"),
+    ]).then(([resultadoAlunos, resultadoTurmas]) => {
       if (!ativo) return;
 
       if (resultadoAlunos.error) {
@@ -73,9 +61,7 @@ export default function Dashboard() {
       } else {
         setTurmas(resultadoTurmas.data || []);
       }
-    }
-
-    carregarGestao();
+    });
 
     return () => {
       ativo = false;
@@ -85,7 +71,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#080808] text-white">
       <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-[max(20px,env(safe-area-inset-top))]">
-        {tela.pagina !== "perfil" && (
+        {paginaAtual !== "perfil" && (
           <header className="mb-7 flex items-center justify-between">
             <button
               type="button"
@@ -126,37 +112,39 @@ export default function Dashboard() {
 
         {aluno ? (
           <>
-            {tela.pagina === "home" && (
+            {paginaAtual === "home" && (
               <AlunoInicio portal={portalAluno} setTela={setTela} />
             )}
-            {tela.pagina === "turmas" && <AlunoTurmas portal={portalAluno} />}
-            {tela.pagina === "frequencia" && (
+            {paginaAtual === "turmas" && <AlunoTurmas portal={portalAluno} />}
+            {paginaAtual === "frequencia" && (
               <AlunoFrequencia portal={portalAluno} />
             )}
           </>
         ) : (
           <>
-            {tela.pagina === "home" && (
+            {paginaAtual === "home" && (
               <Home alunos={alunos} turmas={turmas} setTela={setTela} />
             )}
-            {tela.pagina === "alunos" && (
-              <PainelAlunos turmas={turmas} setTela={setTela} />
-            )}
-            {tela.pagina === "chamada" && (
+            {paginaAtual === "alunos" && <PainelAlunos turmas={turmas} />}
+            {paginaAtual === "chamada" && (
               <PainelChamada turmas={turmas} />
             )}
-            {tela.pagina === "turmas" && <PainelTurmas setTela={setTela} />}
-            {tela.pagina === "turma" && (
+            {paginaAtual === "turmas" && <PainelTurmas setTela={setTela} />}
+            {paginaAtual === "turma" && (
               <TelaTurma turma={tela.turma} setTela={setTela} />
             )}
           </>
         )}
 
-        {tela.pagina === "mais" && <PainelMais setTela={setTela} />}
-        {tela.pagina === "perfil" && <Perfil setTela={setTela} />}
+        {paginaAtual === "mais" && <PainelMais setTela={setTela} />}
+        {paginaAtual === "perfil" && <Perfil setTela={setTela} />}
       </main>
 
-      <BottomNavigation tela={tela} setTela={setTela} usuario={usuario} />
+      <BottomNavigation
+        tela={{ ...tela, pagina: paginaAtual }}
+        setTela={setTela}
+        usuario={usuario}
+      />
     </div>
   );
 }

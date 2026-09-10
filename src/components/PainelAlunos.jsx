@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
   Plus,
@@ -65,7 +65,7 @@ export default function PainelAlunos({ turmas = [] }) {
 
   const { mostrarToast } = useToast();
 
-  const carregarAlunos = useCallback(async () => {
+  async function carregarAlunos() {
     setCarregando(true);
     setErro("");
 
@@ -78,11 +78,30 @@ export default function PainelAlunos({ turmas = [] }) {
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
-    carregarAlunos();
-  }, [carregarAlunos]);
+    let ativo = true;
+
+    listarAlunos()
+      .then((dados) => {
+        if (!ativo) return;
+        setAlunos(dados);
+        setErro("");
+      })
+      .catch((error) => {
+        if (!ativo) return;
+        console.error("Erro ao carregar alunos:", error);
+        setErro("Não foi possível carregar os alunos.");
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   function abrirNovoAluno() {
     setEditando(null);
