@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Copy, MapPin } from "lucide-react";
+import { ChevronRight, Copy, MapPin, MessageCircle } from "lucide-react";
 import { listarTurmas } from "@/services/turmas";
-import { useAuth } from "@/contexts/AuthContext";
-import { ehAdministrador } from "@/lib/permissoes";
 import { useToast } from "@/contexts/ToastContext";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const APP_URL = "https://dtbjj-app.vercel.app";
 
 function resumoHorarios(horarios = []) {
   if (!horarios.length) return "";
@@ -18,10 +17,24 @@ function resumoHorarios(horarios = []) {
     .join(" • ");
 }
 
+function mensagemConvite(turma) {
+  return [
+    `🥋 *DTBJJ – ${turma.nome}*`,
+    "",
+    "Para criar sua conta de aluno:",
+    `1. Acesse ${APP_URL}`,
+    "2. Toque em *Criar conta*",
+    "3. Preencha seus dados",
+    "4. No campo *Código da turma*, use:",
+    `*${turma.codigo_convite}*`,
+    "5. Finalize o cadastro e entre no app.",
+    "",
+    "Esse código é exclusivo para alunos desta turma.",
+  ].join("\n");
+}
+
 export default function PainelTurmas({ setTela }) {
   const [turmas, setTurmas] = useState([]);
-  const { usuario } = useAuth();
-  const admin = ehAdministrador(usuario);
   const { mostrarToast } = useToast();
 
   useEffect(() => {
@@ -47,6 +60,11 @@ export default function PainelTurmas({ setTela }) {
     }
   }
 
+  function compartilharWhatsApp(turma) {
+    const texto = encodeURIComponent(mensagemConvite(turma));
+    window.open(`https://wa.me/?text=${texto}`, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -55,7 +73,7 @@ export default function PainelTurmas({ setTela }) {
         </p>
         <h2 className="mt-1 text-2xl font-bold">Turmas</h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Códigos de convite são exclusivos para cadastro de alunos.
+          Compartilhe o código somente com novos alunos da turma.
         </p>
       </div>
 
@@ -85,29 +103,38 @@ export default function PainelTurmas({ setTela }) {
                 ) : null}
               </div>
 
-              <ChevronRight
-                size={20}
-                className="mt-1 shrink-0 text-white/30"
-              />
+              <ChevronRight size={20} className="mt-1 shrink-0 text-white/30" />
             </button>
 
-            {admin && turma.codigo_convite ? (
-              <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-black/30 px-4 py-3">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-600">
-                    Código do aluno
-                  </p>
-                  <p className="mt-1 font-mono text-sm font-semibold text-zinc-300">
-                    {turma.codigo_convite}
-                  </p>
+            {turma.codigo_convite ? (
+              <div className="mt-4 rounded-2xl bg-black/30 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-600">
+                      Código para novos alunos
+                    </p>
+                    <p className="mt-1 font-mono text-sm font-semibold text-zinc-300">
+                      {turma.codigo_convite}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => copiarCodigo(turma.codigo_convite)}
+                    aria-label="Copiar código da turma"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-zinc-400"
+                  >
+                    <Copy size={16} />
+                  </button>
                 </div>
+
                 <button
                   type="button"
-                  onClick={() => copiarCodigo(turma.codigo_convite)}
-                  aria-label="Copiar código da turma"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-zinc-400"
+                  onClick={() => compartilharWhatsApp(turma)}
+                  className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 text-sm font-semibold text-white transition hover:bg-emerald-600"
                 >
-                  <Copy size={16} />
+                  <MessageCircle size={17} />
+                  Compartilhar cadastro no WhatsApp
                 </button>
               </div>
             ) : null}

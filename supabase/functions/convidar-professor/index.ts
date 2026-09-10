@@ -6,6 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function gerarSenhaTemporaria() {
+  const bytes = new Uint32Array(4);
+  crypto.getRandomValues(bytes);
+  return `Dtbjj!${bytes[0].toString(36)}${bytes[1].toString(36)}${bytes[2].toString(36)}${bytes[3].toString(36)}`;
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -13,12 +26,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado." }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Não autorizado." }, 401);
     }
 
     const jwt = authHeader.replace("Bearer ", "");
@@ -32,10 +41,7 @@ Deno.serve(async (req: Request) => {
     } = await admin.auth.getUser(jwt);
 
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Sessão inválida." }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Sessão inválida. Entre novamente e tente de novo." }, 401);
     }
 
     const { data: perfil, error: perfilError } = await admin
@@ -50,14 +56,9 @@ Deno.serve(async (req: Request) => {
       perfil.cargo !== "Administrador" ||
       perfil.status !== "Ativo"
     ) {
-      return new Response(
-        JSON.stringify({
-          error: "Apenas administradores podem convidar professores.",
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+      return json(
+        { error: "Apenas administradores podem criar professores." },
+        403
       );
     }
 
@@ -66,47 +67,43 @@ Deno.serve(async (req: Request) => {
     const email = String(body?.email || "").trim().toLowerCase();
 
     if (!nome || !email) {
-      return new Response(
-        JSON.stringify({ error: "Nome e e-mail são obrigatórios." }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return json({ error: "Nome e e-mail são obrigatórios." }, 400);
     }
 
-    const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        nome,
+    const senhaTemporaria = gerarSenhaTemporaria();
+
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password: senhaTemporaria,
+      email_confirm: true,
+      user_metadata: { nome },
+      app_metadata: {
+        dtbjj_role: "Professor",
         academia_id: perfil.academia_id,
       },
-      redirectTo: "https://dtbjj-app.vercel.app",
     });
 
     if (error) {
-      const mensagem = error.message.toLowerCase().includes("already")
-        ? "Já existe uma conta com este e-mail."
-        : "Não foi possível enviar o convite.";
+      const mensagem = error.message.toLowerCase();
 
-      return new Response(JSON.stringify({ error: mensagem }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (mensagem.includes("already") || mensagem.includes("registered")) {
+        return json({ error: "Já existe uma conta com este e-mail." }, 409);
+      }
+
+      return json(
+        { error: "Não foi possível criar o professor. Tente novamente." },
+        400
+      );
     }
 
-    return new Response(
-      JSON.stringify({ ok: true, message: "Convite enviado com sucesso." }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return json({
+      ok: true,
+      user_id: data.user?.id,
+      email,
+      senha_temporaria: senhaTemporaria,
+      message: "Acesso do professor criado com sucesso.",
+    });
   } catch {
-    return new Response(
-      JSON.stringify({ error: "Erro interno ao enviar convite." }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return json({ error: "Erro interno ao criar professor." }, 500);
   }
 });
