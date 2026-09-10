@@ -36,19 +36,20 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 - [ ] Remover arquivos de teste e assets padrão não utilizados.
 - [ ] Padronizar tratamento de erros.
 - [ ] Padronizar loading, empty state e feedback de sucesso.
+- [x] Criar CI com lint e build para PRs e main.
 
 ---
 
 # Fase 1 - Arquitetura do frontend
 
 - [ ] Separar telas, componentes, hooks e services.
-- [ ] Criar services/alunos.js.
+- [x] Criar services/alunos.js.
 - [ ] Criar services/turmas.js.
 - [ ] Criar services/chamadas.js.
 - [ ] Criar services/usuarios.js.
 - [ ] Centralizar regras de negócio fora dos componentes visuais.
 - [ ] Revisar AuthContext por completo após definição de permissões.
-- [ ] Criar estrutura de permissões por cargo.
+- [x] Criar estrutura de permissões por cargo.
 - [ ] Criar componentes reutilizáveis de PageHeader, Card, EmptyState, LoadingState, SearchField e Modal.
 
 ---
@@ -56,8 +57,8 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 # Fase 2 - Navegação e sistema visual
 
 ## Estrutura
-- [ ] Redesenhar navegação inferior.
-- [ ] Definir Início, Alunos, Turmas, Chamada e Mais.
+- [x] Redesenhar navegação inferior por perfil.
+- [x] Definir navegação distinta para Aluno e Gestão.
 - [ ] Padronizar cabeçalhos e títulos.
 - [ ] Criar hierarquia visual consistente.
 - [ ] Revisar espaçamentos, tipografia, tamanhos de toque e contraste.
@@ -79,27 +80,27 @@ Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mo
 - [x] Validar código da academia.
 - [ ] Exibir academia reconhecida antes de enviar cadastro.
 - [ ] Criar fluxo de confirmação de email quando aplicável.
-- [ ] Criar recuperação de senha.
+- [x] Criar recuperação de senha.
 - [ ] Criar solicitação de acesso.
 - [ ] Criar status Pendente / Ativo / Recusado.
 - [ ] Criar tela administrativa de solicitações.
-- [ ] Definir permissões de Aluno, Professor e Administrador.
+- [x] Definir permissões de Aluno, Professor e Administrador.
 
 ---
 
 # Fase 4 - Alunos
 
-- [ ] Corrigir filtro por turma.
-- [ ] Refatorar listagem de alunos.
-- [ ] Busca instantânea.
-- [ ] Filtros por turma, faixa e status.
-- [ ] Redesenhar card do aluno.
-- [ ] Redesenhar perfil do aluno.
-- [ ] Melhorar criação e edição.
-- [ ] Carregar matrículas existentes ao editar.
-- [ ] Salvar aluno + matrículas de forma atômica.
+- [x] Corrigir filtro por turma.
+- [x] Refatorar listagem de alunos.
+- [x] Busca instantânea.
+- [x] Filtros por turma, faixa e status.
+- [x] Redesenhar card do aluno.
+- [x] Redesenhar perfil do aluno.
+- [x] Melhorar criação e edição.
+- [x] Carregar matrículas existentes ao editar.
+- [x] Salvar aluno + matrículas de forma atômica.
 - [ ] Adicionar histórico de graduação.
-- [ ] Adicionar frequência real.
+- [x] Adicionar frequência real ao perfil.
 - [ ] Adicionar status e observações.
 
 ---
@@ -208,3 +209,7 @@ Somente depois da DTBJJ estar estável e validada:
 8. Perfil/Admin.
 9. PWA.
 10. Testes e produção.
+
+## Em andamento
+- Módulo Alunos V2: listagem, filtros, perfil, edição e matrículas.
+- Próximo bloco após validação: Turmas V2.
