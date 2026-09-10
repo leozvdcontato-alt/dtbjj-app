@@ -1,215 +1,80 @@
 # TODO - DTBJJ App V2
 
-## Objetivo
-Redesenhar o aplicativo inteiro com foco em fluidez, clareza, segurança, uso mobile e manutenção simples. A prioridade é entregar uma experiência realmente utilizável na rotina da DTBJJ antes de expandir o produto.
+## Decisões de produto vigentes
+- Existem três perfis: Aluno, Professor e Administrador.
+- Cadastro público é exclusivo para Aluno.
+- Aluno entra usando código exclusivo de uma turma e já é matriculado nela.
+- Professor é criado somente por Administrador, por convite.
+- Administrador controla estrutura da academia.
+- Check-in usa QR fixo por local, valida matrícula e janela de -15 min a +60 min com horário do servidor.
+- QR de check-in e código de convite de turma são credenciais diferentes.
+- Compatibilidade futura com Capacitor deve ser preservada.
 
-## Princípios do redesign
-- Mobile first.
-- Poucos passos para concluir ações frequentes.
-- Dados sempre consistentes no banco.
-- Segurança por padrão.
-- Componentes simples e reutilizáveis.
-- Feedback visual claro para loading, sucesso, vazio e erro.
-- DTBJJ como produto atual, mantendo o banco preparado para evolução futura.
-
----
-
-# Fase 0 - Fundação e segurança
-
-## Banco e autenticação
-- [x] Revisar estrutura atual do Supabase.
-- [x] Habilitar RLS em matriculas, chamadas e presencas.
-- [x] Remover políticas públicas desnecessárias de alunos e turmas.
-- [x] Criar índices para foreign keys principais.
-- [x] Impedir matrículas duplicadas por aluno/turma.
-- [x] Impedir presença duplicada por chamada/aluno.
-- [x] Garantir unicidade de usuarios.auth_id.
-- [x] Criar trigger base auth.users -> usuarios.
-- [x] Ajustar cadastro para enviar nome e academia_id como metadata.
-- [x] Remover INSERT manual em usuarios do frontend.
-- [x] Tratar sessão autenticada sem perfil de forma segura.
-- [x] Revisar políticas RLS de usuarios para performance.
+## Fundação e segurança
+- [x] RLS nas tabelas operacionais.
+- [x] Cargos Aluno, Professor e Administrador.
+- [x] Cadastro público limitado a Aluno.
+- [x] Matrícula automática via código da turma.
+- [x] Professor criado apenas por convite administrativo.
+- [x] Permissões de professor limitadas às turmas atribuídas.
+- [x] RPC de aluno + matrículas restrita a Administrador.
+- [x] CI com lint e build.
 - [ ] Ativar proteção contra senhas vazadas no Supabase Auth.
+- [ ] Revisar dependências reportadas pelo npm audit.
 
-## Qualidade
-- [ ] Remover console.log e código de debug do restante do app.
-- [ ] Remover arquivos de teste e assets padrão não utilizados.
-- [ ] Padronizar tratamento de erros.
-- [ ] Padronizar loading, empty state e feedback de sucesso.
-- [x] Criar CI com lint e build para PRs e main.
+## Alunos
+- [x] Listagem, busca e filtros.
+- [x] Perfil e edição.
+- [x] Matrículas existentes na edição.
+- [x] Frequência real no perfil.
+- [ ] Histórico de graduação.
+- [ ] Observações.
 
----
+## Turmas
+- [x] Código exclusivo de convite por turma.
+- [x] Local vinculado à turma.
+- [x] Estrutura de horários por dia e hora.
+- [x] Relação N:N entre professores e turmas.
+- [x] Exibição do código para Administrador.
+- [ ] Editor completo de turma, horários, local e professores.
+- [ ] Gestão de alunos da turma.
+- [ ] Última chamada e frequência média.
 
-# Fase 1 - Arquitetura do frontend
+## Check-in
+- [x] Locais com token QR próprio.
+- [x] Botão central de Check-in no menu do Aluno.
+- [x] Leitura interna de QR quando BarcodeDetector estiver disponível.
+- [x] Suporte a QR aberto pela câmera normal via URL.
+- [x] Janela de -15 min a +60 min.
+- [x] Hora validada no servidor em America/Sao_Paulo.
+- [x] Validação de aluno, matrícula, local e horário.
+- [x] Impedir check-in duplicado.
+- [x] Gerar presença automaticamente.
+- [ ] Gerador visual do QR para impressão.
+- [ ] Configurar horários ainda ausentes nas turmas legadas.
+- [ ] Avaliar geolocalização apenas se houver abuso do QR fixo.
 
-- [ ] Separar telas, componentes, hooks e services.
-- [x] Criar services/alunos.js.
-- [ ] Criar services/turmas.js.
-- [ ] Criar services/chamadas.js.
-- [ ] Criar services/usuarios.js.
-- [ ] Centralizar regras de negócio fora dos componentes visuais.
-- [ ] Revisar AuthContext por completo após definição de permissões.
-- [x] Criar estrutura de permissões por cargo.
-- [ ] Criar componentes reutilizáveis de PageHeader, Card, EmptyState, LoadingState, SearchField e Modal.
+## Professores
+- [x] Convite exclusivo pelo Administrador.
+- [x] Convite enviado por Edge Function protegida por JWT.
+- [x] Perfil Professor criado automaticamente em convite.
+- [ ] Tela para atribuir professores às turmas.
+- [ ] Gestão de status de professor.
 
----
-
-# Fase 2 - Navegação e sistema visual
-
-## Estrutura
-- [x] Redesenhar navegação inferior por perfil.
-- [x] Definir navegação distinta para Aluno e Gestão.
-- [ ] Padronizar cabeçalhos e títulos.
-- [ ] Criar hierarquia visual consistente.
-- [ ] Revisar espaçamentos, tipografia, tamanhos de toque e contraste.
-- [ ] Melhorar safe areas no iPhone/PWA.
-
-## Identidade
-- [ ] Consolidar paleta DTBJJ.
-- [ ] Definir escala tipográfica.
-- [ ] Definir padrões de cards, chips, botões e inputs.
-- [ ] Padronizar ícones com Lucide.
-- [ ] Criar estados ativos/inativos consistentes.
-
----
-
-# Fase 3 - Cadastro e acesso
-
-- [x] Remover logs sensíveis do cadastro/login.
-- [x] Finalizar criação técnica da conta com trigger de perfil.
-- [x] Validar código da academia.
-- [ ] Exibir academia reconhecida antes de enviar cadastro.
-- [ ] Criar fluxo de confirmação de email quando aplicável.
-- [x] Criar recuperação de senha.
-- [ ] Criar solicitação de acesso.
-- [ ] Criar status Pendente / Ativo / Recusado.
-- [ ] Criar tela administrativa de solicitações.
-- [x] Definir permissões de Aluno, Professor e Administrador.
-
----
-
-# Fase 4 - Alunos
-
-- [x] Corrigir filtro por turma.
-- [x] Refatorar listagem de alunos.
-- [x] Busca instantânea.
-- [x] Filtros por turma, faixa e status.
-- [x] Redesenhar card do aluno.
-- [x] Redesenhar perfil do aluno.
-- [x] Melhorar criação e edição.
-- [x] Carregar matrículas existentes ao editar.
-- [x] Salvar aluno + matrículas de forma atômica.
-- [ ] Adicionar histórico de graduação.
-- [x] Adicionar frequência real ao perfil.
-- [ ] Adicionar status e observações.
-
----
-
-# Fase 5 - Turmas
-
-- [ ] Redesenhar lista de turmas.
-- [ ] Redesenhar detalhe da turma.
-- [ ] Exibir alunos matriculados corretamente.
-- [ ] Exibir dias, horários e professor de forma clara.
-- [ ] Criar edição simples de turma.
-- [ ] Criar gestão de alunos da turma.
-- [ ] Exibir última chamada e frequência média.
-
----
-
-# Fase 6 - Chamada
-
-- [ ] Criar fluxo principal de chamada.
-- [ ] Escolher turma.
+## Chamada
+- [ ] Redesenhar fluxo principal.
 - [ ] Carregar somente alunos matriculados.
-- [ ] Marcar/desmarcar presença com um toque.
-- [ ] Ação "Marcar todos".
+- [ ] Marcar todos.
 - [ ] Salvar chamada em transação segura.
-- [ ] Evitar presença duplicada.
-- [ ] Criar confirmação visual após salvar.
-- [ ] Criar histórico por turma.
-- [ ] Permitir abrir detalhes de chamada anterior.
+- [ ] Histórico por turma.
+- [ ] Integrar visualmente presença por check-in e presença manual.
 
----
-
-# Fase 7 - Início / Dashboard
-
-- [ ] Redesenhar dashboard como central operacional.
-- [ ] Próximas turmas do dia.
-- [ ] Atalho para iniciar chamada.
-- [ ] Quantidade de alunos ativos.
-- [ ] Últimas chamadas.
-- [ ] Pendências administrativas.
-- [ ] Indicadores úteis sem poluir a tela.
-
----
-
-# Fase 8 - Perfil e Mais
-
-- [ ] Redesenhar Meu Perfil.
-- [ ] Foto/avatar.
-- [ ] Nome, email, telefone e CPF.
-- [ ] Alteração de senha.
-- [ ] Sair.
-- [ ] Área administrativa conforme cargo.
-- [ ] Configurações do aplicativo.
-- [ ] Informações da academia.
-
----
-
-# Fase 9 - PWA e experiência
-
-- [ ] Revisar manifesto e ícones.
-- [ ] Melhorar tela de instalação.
-- [ ] Criar update prompt para nova versão.
-- [ ] Revisar cache do service worker.
-- [ ] Definir funcionamento offline útil.
-- [ ] Criar fallback para perda de conexão.
-- [ ] Testar Android e iPhone.
-
----
-
-# Fase 10 - Testes, observabilidade e produção
-
-- [ ] Criar testes para regras críticas.
-- [ ] Testar cadastro/login/logout.
-- [ ] Testar CRUD de alunos.
-- [ ] Testar aluno x turma.
-- [ ] Testar chamada e presença.
-- [ ] Revisar logs de produção.
-- [x] Criar fluxo branch -> preview -> produção.
-- [x] Documentar mudanças de banco via migrations.
-- [ ] Revisar Supabase Security Advisor antes de releases.
-
----
-
-# Fase 11 - Evolução futura
-
-Somente depois da DTBJJ estar estável e validada:
-- [ ] QR Code para check-in.
-- [ ] Check-in automático.
-- [ ] Controle avançado de graduação.
-- [ ] Relatórios.
-- [ ] Notificações.
-- [ ] Multiacademias completo.
-- [ ] Tatame Pro.
-- [ ] Planos e assinaturas.
-
----
-
-# Ordem atual de execução
-
-1. Segurança + autenticação.
-2. Limpeza e arquitetura do frontend.
-3. Sistema visual + navegação.
-4. Alunos.
-5. Turmas.
-6. Chamada.
-7. Dashboard.
-8. Perfil/Admin.
-9. PWA.
-10. Testes e produção.
-
-## Em andamento
-- Módulo Alunos V2: listagem, filtros, perfil, edição e matrículas.
-- Próximo bloco após validação: Turmas V2.
+## Próxima ordem
+1. Validar cadastro de Aluno e convite de Professor em produção.
+2. Finalizar editor Turmas V2.
+3. Atribuição de professores.
+4. Gerador de QR por local.
+5. Chamada V2.
+6. Dashboard.
+7. Perfil/Admin.
+8. PWA e testes mobile.
