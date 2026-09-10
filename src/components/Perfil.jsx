@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Camera, Lock, Pencil, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -15,17 +15,12 @@ export default function Perfil({ setTela }) {
   const [editando, setEditando] = useState(false);
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [alterandoSenha, setAlterandoSenha] = useState(false);
-  const [form, setForm] = useState({ nome: "", telefone: "", cpf: "" });
+  const [form, setForm] = useState(() => ({
+    nome: usuario?.nome || "",
+    telefone: usuario?.telefone || "",
+    cpf: usuario?.cpf || "",
+  }));
   const [senha, setSenha] = useState({ nova: "", confirmar: "" });
-
-  useEffect(() => {
-    if (!usuario) return;
-    setForm({
-      nome: usuario.nome || "",
-      telefone: usuario.telefone || "",
-      cpf: usuario.cpf || "",
-    });
-  }, [usuario]);
 
   async function selecionarFoto(event) {
     const file = event.target.files?.[0];
@@ -89,7 +84,9 @@ export default function Perfil({ setTela }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-500">Conta</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
+            Conta
+          </p>
           <h1 className="mt-1 text-2xl font-bold">Meu perfil</h1>
         </div>
 
@@ -106,7 +103,11 @@ export default function Perfil({ setTela }) {
         <div className="flex flex-col items-center text-center">
           <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-zinc-900 text-2xl font-bold text-zinc-500">
             {usuario?.foto ? (
-              <img src={usuario.foto} alt={usuario.nome} className="h-full w-full object-cover" />
+              <img
+                src={usuario.foto}
+                alt={usuario.nome}
+                className="h-full w-full object-cover"
+              />
             ) : (
               usuario?.nome?.slice(0, 1)?.toUpperCase() || "D"
             )}
@@ -131,7 +132,9 @@ export default function Perfil({ setTela }) {
           </button>
 
           <h2 className="mt-4 text-xl font-bold">{usuario?.nome}</h2>
-          <p className="mt-1 text-sm text-zinc-500">{rotuloCargo(usuario?.cargo)} DTBJJ</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {rotuloCargo(usuario?.cargo)} DTBJJ
+          </p>
         </div>
       </section>
 
@@ -140,26 +143,36 @@ export default function Perfil({ setTela }) {
           rotulo="Nome"
           valor={form.nome}
           editando={editando}
-          onChange={(valor) => setForm((atual) => ({ ...atual, nome: valor }))}
+          onChange={(valor) =>
+            setForm((atual) => ({ ...atual, nome: valor }))
+          }
         />
         <Campo
           rotulo="Telefone"
           valor={form.telefone}
           editando={editando}
           placeholder="Não informado"
-          onChange={(valor) => setForm((atual) => ({ ...atual, telefone: valor }))}
+          onChange={(valor) =>
+            setForm((atual) => ({ ...atual, telefone: valor }))
+          }
         />
         <Campo
           rotulo="CPF"
           valor={form.cpf}
           editando={editando}
           placeholder="Não informado"
-          onChange={(valor) => setForm((atual) => ({ ...atual, cpf: valor }))}
+          onChange={(valor) =>
+            setForm((atual) => ({ ...atual, cpf: valor }))
+          }
         />
 
         <div className="rounded-2xl bg-black/30 px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.15em] text-zinc-600">E-mail</p>
-          <p className="mt-1 break-all text-sm font-medium text-zinc-300">{usuario?.email}</p>
+          <p className="text-xs uppercase tracking-[0.15em] text-zinc-600">
+            E-mail
+          </p>
+          <p className="mt-1 break-all text-sm font-medium text-zinc-300">
+            {usuario?.email}
+          </p>
         </div>
       </section>
 
@@ -168,7 +181,14 @@ export default function Perfil({ setTela }) {
           <>
             <button
               type="button"
-              onClick={() => setEditando(false)}
+              onClick={() => {
+                setForm({
+                  nome: usuario?.nome || "",
+                  telefone: usuario?.telefone || "",
+                  cpf: usuario?.cpf || "",
+                });
+                setEditando(false);
+              }}
               className="h-12 rounded-2xl border border-white/10 bg-[#121212] font-semibold text-zinc-300"
             >
               Cancelar
@@ -209,7 +229,9 @@ export default function Perfil({ setTela }) {
             autoComplete="new-password"
             placeholder="Nova senha"
             value={senha.nova}
-            onChange={(event) => setSenha((atual) => ({ ...atual, nova: event.target.value }))}
+            onChange={(event) =>
+              setSenha((atual) => ({ ...atual, nova: event.target.value }))
+            }
             className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 outline-none focus:border-red-700"
           />
           <input
@@ -217,7 +239,9 @@ export default function Perfil({ setTela }) {
             autoComplete="new-password"
             placeholder="Confirmar nova senha"
             value={senha.confirmar}
-            onChange={(event) => setSenha((atual) => ({ ...atual, confirmar: event.target.value }))}
+            onChange={(event) =>
+              setSenha((atual) => ({ ...atual, confirmar: event.target.value }))
+            }
             className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 outline-none focus:border-red-700"
           />
           <button
@@ -236,7 +260,9 @@ export default function Perfil({ setTela }) {
 function Campo({ rotulo, valor, editando, onChange, placeholder = "" }) {
   return (
     <div className="rounded-2xl bg-black/30 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.15em] text-zinc-600">{rotulo}</p>
+      <p className="text-xs uppercase tracking-[0.15em] text-zinc-600">
+        {rotulo}
+      </p>
       {editando ? (
         <input
           type="text"

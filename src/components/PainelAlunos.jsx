@@ -1,488 +1,463 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ChevronRight,
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
+  UserRound,
+} from "lucide-react";
 import AlunoModal from "./AlunoModal";
 import AlunoPerfil from "./AlunoPerfil";
-import { useToast } from "@/contexts/ToastContext";
 import Faixa from "./Faixa";
-import { Search, X } from "lucide-react";
+import EmptyState from "./ui/EmptyState";
+import PageHeader from "./ui/PageHeader";
+import SearchField from "./ui/SearchField";
+import { useToast } from "@/contexts/ToastContext";
+import { FAIXAS, normalizarFaixa, rotuloGraus } from "@/lib/faixas";
+import {
+  listarAlunos,
+  obterPerfilAluno,
+  salvarAlunoComMatriculas,
+} from "@/services/alunos";
 
-function normalizarFaixa(faixa) {
-  const mapa = {
-    Branca: "branca",
-    Cinza: "cinza",
-    Amarela: "amarela",
-    Laranja: "laranja",
-    Verde: "verde",
-    Azul: "azul",
-    Roxa: "roxa",
-    Marrom: "marrom",
-    Preta: "preta",
+const FORM_INICIAL = {
+  nome: "",
+  cpf: "",
+  telefone: "",
+  faixa: "Branca",
+  graus: 0,
+  categoria: "Adulto",
+  status: "Ativo",
+  turmas: [],
+};
 
-    "Cinza e Branca": "cinza_branca",
-    "Cinza e Preta": "cinza_preta",
-
-    "Amarela e Branca": "amarela_branca",
-    "Amarela e Preta": "amarela_preta",
-
-    "Laranja e Branca": "laranja_branca",
-    "Laranja e Preta": "laranja_preta",
-
-    "Verde e Branca": "verde_branca",
-    "Verde e Preta": "verde_preta",
-  };
-
-  return mapa[faixa] || "branca";
+function normalizarTexto(valor = "") {
+  return valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
-export default function PainelAlunos({
-  turmas,
-  setTela,
-}) {
+function nomesTurmas(aluno) {
+  return (aluno.matriculas || [])
+    .map((matricula) => matricula.turmas?.nome)
+    .filter(Boolean);
+}
 
-  const [alunos, setAlunos] =
-    useState([]);
+export default function PainelAlunos({ turmas = [] }) {
+  const [alunos, setAlunos] = useState([]);
+  const [busca, setBusca] = useState("");
+  const [turmaSelecionada, setTurmaSelecionada] = useState("todos");
+  const [faixaSelecionada, setFaixaSelecionada] = useState("todas");
+  const [statusSelecionado, setStatusSelecionado] = useState("todos");
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
 
-    const [busca, setBusca] = useState("");
+  const [modal, setModal] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [form, setForm] = useState(FORM_INICIAL);
+  const [salvando, setSalvando] = useState(false);
 
-    const [turmaSelecionada, setTurmaSelecionada] = useState("Todos");
-
-  const [modal, setModal] =
-    useState(false);
-
-  const [perfilModal, setPerfilModal] =
-    useState(false);
-
-  const [perfilAluno, setPerfilAluno] =
-    useState(null);
-
-  const [editando, setEditando] =
-    useState(null);
+  const [perfilModal, setPerfilModal] = useState(false);
+  const [perfilAluno, setPerfilAluno] = useState(null);
+  const [carregandoPerfil, setCarregandoPerfil] = useState(false);
 
   const { mostrarToast } = useToast();
 
-  const [form, setForm] =
-    useState({
-      nome: "",
-      cpf: "",
-      telefone: "",
-      faixa: "Branca",
-      graus: 0,
-      categoria: "Adulto",
-      status: "Ativo",
-      turmas: [],
-    });
-
   async function carregarAlunos() {
+    setCarregando(true);
+    setErro("");
 
-const { data, error } = await supabase
-  .from("alunos")
-  .select(`
-    *,
-    matriculas(*)
-  `)
-  .order("nome");
-  
-    if (error) {
-      console.error(error);
-      return;
+    try {
+      const dados = await listarAlunos();
+      setAlunos(dados);
+    } catch (error) {
+      console.error("Erro ao carregar alunos:", error);
+      setErro("Não foi possível carregar os alunos.");
+    } finally {
+      setCarregando(false);
     }
-
-console.log(data);
-    setAlunos(data);
-
   }
 
   useEffect(() => {
+    let ativo = true;
 
-    carregarAlunos();
+    listarAlunos()
+      .then((dados) => {
+        if (!ativo) return;
+        setAlunos(dados);
+        setErro("");
+      })
+      .catch((error) => {
+        if (!ativo) return;
+        console.error("Erro ao carregar alunos:", error);
+        setErro("Não foi possível carregar os alunos.");
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
 
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   function abrirNovoAluno() {
-
     setEditando(null);
-
-    setForm({
-      nome: "",
-      cpf: "",
-      telefone: "",
-      faixa: "Branca",
-      graus: 0,
-      categoria: "Adulto",
-      status: "Ativo",
-      turmas: [],
-    });
-
+    setForm({ ...FORM_INICIAL, turmas: [] });
     setModal(true);
   }
 
   function editarAluno(aluno) {
-
-    console.log(aluno);
-
     setEditando(aluno);
-
     setForm({
-      nome: aluno.nome,
-      cpf: aluno.cpf,
-      telefone: aluno.telefone,
+      nome: aluno.nome || "",
+      cpf: aluno.cpf || "",
+      telefone: aluno.telefone || "",
       faixa: aluno.faixa || "Branca",
-      graus: aluno.graus || 0,
+      graus: Number(aluno.graus || 0),
       categoria: aluno.categoria || "Adulto",
-      status: aluno.status,
-      turmas: [],
+      status: aluno.status || "Ativo",
+      turmas: (aluno.matriculas || []).map((matricula) => matricula.turma_id),
     });
-
     setModal(true);
   }
 
   async function abrirPerfil(aluno) {
-
-    const { data: matriculas, error: erroMatriculas } =
-      await supabase
-        .from("matriculas")
-        .select(`
-        turma_id,
-        turmas (
-          id,
-          nome
-        )
-      `)
-        .eq("aluno_id", aluno.id);
-
-    if (erroMatriculas) {
-      console.error(erroMatriculas);
-      return;
-    }
-
-    const { data: presencas, error: erroPresencas } =
-      await supabase
-        .from("presencas")
-        .select("*")
-        .eq("aluno_id", aluno.id);
-
-    if (erroPresencas) {
-      console.error(erroPresencas);
-      return;
-    }
-
-    const totalPresencas = presencas.length;
-    const metaGraduacao = 60;
-
-    setPerfilAluno({
-      aluno,
-      turmas: matriculas.map(m => m.turmas),
-      totalPresencas,
-      metaGraduacao,
-      faltam: Math.max(0, metaGraduacao - totalPresencas),
-      aptoGraduacao: totalPresencas >= metaGraduacao,
-    });
-
+    setPerfilAluno(null);
+    setCarregandoPerfil(true);
     setPerfilModal(true);
 
+    try {
+      const perfil = await obterPerfilAluno(aluno.id);
+      setPerfilAluno(perfil);
+    } catch (error) {
+      console.error("Erro ao carregar perfil do aluno:", error);
+      setPerfilModal(false);
+      mostrarToast("Não foi possível abrir o aluno.", "error");
+    } finally {
+      setCarregandoPerfil(false);
+    }
   }
 
-  async function salvarAluno() {
+  async function salvarAluno(event) {
+    event.preventDefault();
 
-    console.log("EDITANDO:", editando);
-    console.log("ID:", editando?.id);
-    console.log("FORM:", form);
-
-    let error = null;
-
-    if (editando) {
-
-      const resultado = await supabase
-        .from("alunos")
-        .update({
-          nome: form.nome,
-          cpf: form.cpf,
-          telefone: form.telefone,
-          faixa: form.faixa,
-          graus: form.graus,
-          categoria: form.categoria,
-          status: form.status,
-        })
-        .eq("id", editando.id)
-        .select();
-
-      const alunoId = resultado.data[0].id;
-
-      console.log("Aluno editado:", alunoId);
-      console.log("Turmas selecionadas:", form.turmas);
-
-      const { data: antesDelete } = await supabase
-        .from("matriculas")
-        .select("*")
-        .eq("aluno_id", alunoId);
-
-      console.log("ANTES DO DELETE:", antesDelete);
-
-      // Remove todas as matrículas atuais do aluno
-      const { error: erroDelete } = await supabase
-        .from("matriculas")
-        .delete()
-        .eq("aluno_id", alunoId);
-
-      console.log("ALUNO ID PARA DELETE:", alunoId);
-      console.log("ERRO DELETE:", erroDelete);
-
-      const { data: depoisDelete } = await supabase
-        .from("matriculas")
-        .select("*")
-        .eq("aluno_id", alunoId);
-
-      console.log("DEPOIS DO DELETE:", depoisDelete);
-
-      if (erroDelete) {
-        console.error("Erro ao remover matrículas:", erroDelete);
-      }
-
-      // Cria novamente as matrículas selecionadas
-      if (form.turmas.length > 0) {
-
-        const matriculas = form.turmas.map((turmaId) => ({
-          aluno_id: alunoId,
-          turma_id: turmaId,
-        }));
-
-        console.log("MATRÍCULAS PARA INSERIR:", matriculas);
-
-        const {
-          data: dadosMatriculas,
-          error: erroMatriculas,
-        } = await supabase
-          .from("matriculas")
-          .insert(matriculas)
-          .select();
-
-        console.log("RETORNO MATRÍCULAS:", dadosMatriculas);
-        console.log("ERRO MATRÍCULAS:", erroMatriculas);
-
-        if (erroMatriculas) {
-          console.error("Erro ao salvar matrículas:", erroMatriculas);
-        }
-      }
-
-      console.log("RESULTADO UPDATE:", JSON.stringify(resultado, null, 2));
-
-      error = resultado.error;
-
-    } else {
-
-      const resultado = await supabase
-        .from("alunos")
-        .insert([
-          {
-            nome: form.nome,
-            cpf: form.cpf,
-            telefone: form.telefone,
-            faixa: form.faixa,
-            graus: form.graus,
-            categoria: form.categoria,
-            status: form.status,
-          },
-        ])
-        .select();
-
-      const alunoId = resultado.data[0].id;
-
-      console.log("Aluno criado:", alunoId);
-      console.log("Turmas selecionadas:", form.turmas);
-
-      if (form.turmas.length > 0) {
-
-        const matriculas = form.turmas.map((turmaId) => ({
-          aluno_id: alunoId,
-          turma_id: turmaId,
-        }));
-
-        console.log("MATRÍCULAS:", matriculas);
-
-        const { error: erroMatriculas } = await supabase
-          .from("matriculas")
-          .insert(matriculas);
-
-        console.log("ERRO MATRÍCULAS:", erroMatriculas);
-      }
-
-      error = resultado.error;
-
-    }
-
-    if (error) {
-      console.error("ERRO:", error);
-
-      mostrarToast(
-        "Não foi possível salvar o aluno.",
-        "error"
-      );
-      
+    if (!form.nome.trim()) {
+      mostrarToast("Informe o nome do aluno.", "error");
       return;
     }
-    await carregarAlunos();
 
-    setModal(false);
+    setSalvando(true);
 
-mostrarToast(
-  editando
-    ? "Aluno atualizado com sucesso!"
-    : "Aluno cadastrado com sucesso!",
-  "success"
-);
+    try {
+      await salvarAlunoComMatriculas(editando?.id, form);
+      await carregarAlunos();
+      setModal(false);
+
+      mostrarToast(
+        editando
+          ? "Aluno atualizado com sucesso!"
+          : "Aluno cadastrado com sucesso!",
+        "success"
+      );
+    } catch (error) {
+      console.error("Erro ao salvar aluno:", error);
+      mostrarToast("Não foi possível salvar o aluno.", "error");
+    } finally {
+      setSalvando(false);
+    }
   }
 
-  const alunosFiltrados = alunos.filter((aluno) =>
-  aluno.nome.toLowerCase().includes(busca.toLowerCase())
-);
+  const alunosFiltrados = useMemo(() => {
+    const termo = normalizarTexto(busca);
+
+    return alunos.filter((aluno) => {
+      const correspondeBusca =
+        !termo ||
+        normalizarTexto(aluno.nome).includes(termo) ||
+        normalizarTexto(aluno.telefone).includes(termo) ||
+        normalizarTexto(aluno.cpf).includes(termo);
+
+      const correspondeTurma =
+        turmaSelecionada === "todos" ||
+        (aluno.matriculas || []).some(
+          (matricula) => String(matricula.turma_id) === turmaSelecionada
+        );
+
+      const correspondeFaixa =
+        faixaSelecionada === "todas" || aluno.faixa === faixaSelecionada;
+
+      const correspondeStatus =
+        statusSelecionado === "todos" || aluno.status === statusSelecionado;
+
+      return (
+        correspondeBusca &&
+        correspondeTurma &&
+        correspondeFaixa &&
+        correspondeStatus
+      );
+    });
+  }, [
+    alunos,
+    busca,
+    turmaSelecionada,
+    faixaSelecionada,
+    statusSelecionado,
+  ]);
+
+  const possuiFiltros =
+    busca ||
+    turmaSelecionada !== "todos" ||
+    faixaSelecionada !== "todas" ||
+    statusSelecionado !== "todos";
+
+  function limparFiltros() {
+    setBusca("");
+    setTurmaSelecionada("todos");
+    setFaixaSelecionada("todas");
+    setStatusSelecionado("todos");
+  }
+
   return (
-
     <>
-
-<div className="mt-6 px-2">
-
-<div className="flex items-center justify-between mb-5">
-
-  <h2 className="text-2xl font-bold">
-  Alunos
-  <span className="ml-2 text-lg text-gray-400 font-medium">
-    ({alunos.length})
-  </span>
-</h2>
-
-  <button
-    onClick={abrirNovoAluno}
-    className="h-10 px-4 bg-red-700 hover:bg-red-600 rounded-xl text-sm font-semibold"
-  >
-    + Novo
-  </button>
-
-</div>
-
-<div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar">
-
-<div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar">
-
-  <button
-    onClick={() => setTurmaSelecionada("Todos")}
-    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-      turmaSelecionada === "Todos"
-        ? "bg-red-700 text-white"
-        : "bg-[#171717] text-gray-300"
-    }`}
-  >
-    Todos
-  </button>
-
-  {turmas.map((turma) => (
-
-    <button
-      key={turma.id}
-      onClick={() => setTurmaSelecionada(turma.id)}
-      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-        turmaSelecionada === turma.id
-          ? "bg-red-700 text-white"
-          : "bg-[#171717] text-gray-300"
-      }`}
-    >
-      {turma.nome}
-    </button>
-
-  ))}
-
-</div>
-</div>
-
-<div className="space-y-2">
-
-{alunosFiltrados.length === 0 ? (
-
-  <div className="py-10 text-center text-sm text-gray-500">
-    Nenhum aluno encontrado.
-  </div>
-
-) : (
-
-  alunosFiltrados.map((aluno) => (
-
-    <button
-      key={aluno.id}
-      onClick={() => abrirPerfil(aluno)}
-      className="w-full text-left bg-[#171717] hover:bg-[#1d1d1d] rounded-2xl px-4 py-3 transition-colors"
-    >
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <h3 className="font-semibold text-base">
-            {aluno.nome}
-          </h3>
-
-          <div className="flex items-center gap-2 mt-1">
-
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                aluno.status === "Ativo"
-                  ? "bg-green-900/40 text-green-400"
-                  : "bg-red-900/40 text-red-400"
-              }`}
+      <section className="space-y-5">
+        <PageHeader
+          title="Alunos"
+          subtitle={
+            alunos.length === 1
+              ? "1 aluno cadastrado"
+              : alunos.length + " alunos cadastrados"
+          }
+          action={
+            <button
+              type="button"
+              onClick={abrirNovoAluno}
+              className="flex h-11 items-center gap-2 rounded-2xl bg-red-700 px-4 text-sm font-semibold text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             >
-              {aluno.status}
-            </span>
+              <Plus size={18} />
+              <span className="hidden sm:inline">Novo aluno</span>
+              <span className="sm:hidden">Novo</span>
+            </button>
+          }
+        />
 
-            <Faixa
-              faixa={normalizarFaixa(aluno.faixa)}
-              graus={aluno.graus}
-            />
+        <SearchField
+          value={busca}
+          onChange={setBusca}
+          placeholder="Buscar por nome, telefone ou CPF"
+          label="Buscar aluno"
+        />
 
+        <div className="space-y-3">
+          <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setTurmaSelecionada("todos")}
+              className={
+                "min-h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition " +
+                (turmaSelecionada === "todos"
+                  ? "border-red-700 bg-red-950/50 text-red-300"
+                  : "border-white/10 bg-[#141414] text-zinc-400 hover:text-white")
+              }
+            >
+              Todas as turmas
+            </button>
+
+            {turmas.map((turma) => (
+              <button
+                key={turma.id}
+                type="button"
+                onClick={() => setTurmaSelecionada(String(turma.id))}
+                className={
+                  "min-h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition " +
+                  (turmaSelecionada === String(turma.id)
+                    ? "border-red-700 bg-red-950/50 text-red-300"
+                    : "border-white/10 bg-[#141414] text-zinc-400 hover:text-white")
+                }
+              >
+                {turma.nome}
+              </button>
+            ))}
           </div>
 
+          <div className="grid grid-cols-[auto_1fr_1fr] gap-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-[#141414] text-zinc-500">
+              <SlidersHorizontal size={17} />
+            </div>
+
+            <select
+              value={faixaSelecionada}
+              onChange={(event) => setFaixaSelecionada(event.target.value)}
+              aria-label="Filtrar por faixa"
+              className="min-w-0 rounded-2xl border border-white/10 bg-[#141414] px-3 text-sm text-zinc-300 outline-none focus:border-red-700 focus:ring-2 focus:ring-red-950"
+            >
+              <option value="todas">Todas as faixas</option>
+              {FAIXAS.map((faixa) => (
+                <option key={faixa} value={faixa}>
+                  {faixa}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={statusSelecionado}
+              onChange={(event) => setStatusSelecionado(event.target.value)}
+              aria-label="Filtrar por status"
+              className="min-w-0 rounded-2xl border border-white/10 bg-[#141414] px-3 text-sm text-zinc-300 outline-none focus:border-red-700 focus:ring-2 focus:ring-red-950"
+            >
+              <option value="todos">Todos os status</option>
+              <option value="Ativo">Ativos</option>
+              <option value="Inativo">Inativos</option>
+            </select>
+          </div>
         </div>
 
-        <span className="text-gray-500 text-xl">
-          ›
-        </span>
+        {!carregando && !erro ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-zinc-600">
+              {alunosFiltrados.length === 1
+                ? "1 resultado"
+                : alunosFiltrados.length + " resultados"}
+            </p>
 
-      </div>
+            {possuiFiltros ? (
+              <button
+                type="button"
+                onClick={limparFiltros}
+                className="text-xs font-semibold text-red-500 transition hover:text-red-400 focus-visible:outline-none focus-visible:underline"
+              >
+                Limpar filtros
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
-    </button>
+        {carregando ? (
+          <div className="space-y-2" aria-label="Carregando alunos">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="h-[92px] animate-pulse rounded-3xl border border-white/5 bg-white/[0.03]"
+              />
+            ))}
+          </div>
+        ) : erro ? (
+          <EmptyState
+            Icon={RefreshCw}
+            title="Não foi possível carregar"
+            description="Verifique sua conexão e tente novamente."
+            action={
+              <button
+                type="button"
+                onClick={carregarAlunos}
+                className="rounded-2xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                Tentar novamente
+              </button>
+            }
+          />
+        ) : alunosFiltrados.length === 0 ? (
+          <EmptyState
+            Icon={UserRound}
+            title={possuiFiltros ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
+            description={
+              possuiFiltros
+                ? "Tente ajustar a busca ou os filtros."
+                : "Cadastre o primeiro aluno para começar a organizar as turmas."
+            }
+            action={
+              possuiFiltros ? (
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  className="rounded-2xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                  Limpar filtros
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={abrirNovoAluno}
+                  className="rounded-2xl bg-red-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
+                >
+                  Cadastrar aluno
+                </button>
+              )
+            }
+          />
+        ) : (
+          <div className="space-y-2">
+            {alunosFiltrados.map((aluno) => {
+              const turmasAluno = nomesTurmas(aluno);
 
-  ))
+              return (
+                <button
+                  key={aluno.id}
+                  type="button"
+                  onClick={() => abrirPerfil(aluno)}
+                  className="group w-full rounded-3xl border border-white/10 bg-[#141414] p-4 text-left transition hover:border-white/15 hover:bg-[#171717] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-sm font-bold text-zinc-400">
+                      {aluno.nome?.slice(0, 1)?.toUpperCase() || "A"}
+                    </div>
 
-)}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate font-semibold text-white">
+                            {aluno.nome}
+                          </h3>
+                          <p className="mt-0.5 truncate text-xs text-zinc-600">
+                            {turmasAluno.length
+                              ? turmasAluno.join(" • ")
+                              : "Sem turma vinculada"}
+                          </p>
+                        </div>
 
-</div>
+                        <ChevronRight
+                          size={19}
+                          className="mt-1 shrink-0 text-zinc-700 transition group-hover:translate-x-0.5 group-hover:text-zinc-400"
+                        />
+                      </div>
 
-<div className="h-24"></div>
+                      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <span
+                          className={
+                            "rounded-full px-2.5 py-1 text-[11px] font-semibold " +
+                            (aluno.status === "Ativo"
+                              ? "bg-emerald-950/50 text-emerald-400"
+                              : "bg-zinc-800 text-zinc-400")
+                          }
+                        >
+                          {aluno.status}
+                        </span>
 
-      </div>
-<div className="fixed bottom-28 left-0 right-0 px-4 z-30">
-  <div className="relative max-w-lg mx-auto">
+                        <span className="text-xs text-zinc-500">
+                          {aluno.categoria || "Sem categoria"}
+                        </span>
 
-    <Search
-      size={18}
-      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-    />
+                        <div className="flex min-w-24 items-center gap-2">
+                          <Faixa
+                            faixa={normalizarFaixa(aluno.faixa)}
+                            graus={Number(aluno.graus || 0)}
+                          />
+                          <span className="shrink-0 text-[11px] text-zinc-600">
+                            {rotuloGraus(aluno.graus)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
-    <input
-      type="text"
-      placeholder="Buscar aluno..."
-      value={busca}
-      onChange={(e) => setBusca(e.target.value)}
-className="w-full rounded-full bg-[#171717] border border-white/10 ring-1 ring-white/5 pl-11 pr-11 py-3 text-sm text-white placeholder:text-gray-500 shadow-2xl focus:outline-none focus:border-red-600 transition-colors"    />
-
-    {busca && (
-      <button
-        onClick={() => setBusca("")}
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-      >
-        <X size={18} />
-      </button>
-    )}
-
-  </div>
-</div>
       <AlunoModal
         modal={modal}
         editando={editando}
@@ -491,6 +466,7 @@ className="w-full rounded-full bg-[#171717] border border-white/10 ring-1 ring-w
         salvarAluno={salvarAluno}
         setModal={setModal}
         turmas={turmas}
+        salvando={salvando}
       />
 
       <AlunoPerfil
@@ -498,8 +474,8 @@ className="w-full rounded-full bg-[#171717] border border-white/10 ring-1 ring-w
         perfilAluno={perfilAluno}
         editarAluno={editarAluno}
         setPerfilModal={setPerfilModal}
+        carregando={carregandoPerfil}
       />
     </>
-
   );
 }

@@ -11,17 +11,16 @@ import { buscarUltimaChamada } from "@/services/chamadas";
 function formatarData(data, horario) {
   if (!data) return "Data não informada";
 
-  const hoje = new Date();
-  const chamada = new Date(`${data}T00:00:00`);
+  const chamada = new Date(data + "T00:00:00");
   const inicioHoje = new Date();
   inicioHoje.setHours(0, 0, 0, 0);
   const diff = Math.floor((inicioHoje.getTime() - chamada.getTime()) / 86400000);
 
-  if (diff === 0) return `Hoje${horario ? ` às ${horario}` : ""}`;
-  if (diff === 1) return `Ontem${horario ? ` às ${horario}` : ""}`;
+  if (diff === 0) return "Hoje" + (horario ? " às " + horario : "");
+  if (diff === 1) return "Ontem" + (horario ? " às " + horario : "");
 
   const [, mes, dia] = data.split("-");
-  return `${dia}/${mes}${horario ? ` às ${horario}` : ""}`;
+  return dia + "/" + mes + (horario ? " às " + horario : "");
 }
 
 export default function Home({ alunos, turmas, setTela }) {
@@ -96,7 +95,9 @@ export default function Home({ alunos, turmas, setTela }) {
           </div>
           <div>
             <p className="font-bold">Iniciar chamada</p>
-            <p className="mt-0.5 text-sm text-red-100/80">Escolha uma turma e registre as presenças.</p>
+            <p className="mt-0.5 text-sm text-red-100/80">
+              Escolha uma turma e registre as presenças.
+            </p>
           </div>
         </div>
         <ArrowRight size={20} />

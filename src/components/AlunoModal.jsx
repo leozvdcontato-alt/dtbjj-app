@@ -1,4 +1,9 @@
+import { Loader2, Save, X } from "lucide-react";
 import MultiSelect from "./ui/MultiSelect";
+import { FAIXAS } from "@/lib/faixas";
+
+const inputClass =
+  "h-12 w-full rounded-2xl border border-white/10 bg-[#171717] px-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-700 focus:ring-2 focus:ring-red-950";
 
 export default function AlunoModal({
   modal,
@@ -8,204 +13,213 @@ export default function AlunoModal({
   salvarAluno,
   setModal,
   turmas,
+  salvando,
 }) {
-
   if (!modal) return null;
-console.log("Turmas:", turmas);
-return (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-    <div className="w-full max-w-xl max-h-[90vh] bg-[#121212] rounded-3xl flex flex-col overflow-hidden">
 
-      {/* Header */}
-      <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">
-          {editando ? "Editar Aluno" : "Novo Aluno"}
-        </h2>
+  function atualizarCampo(campo, valor) {
+    setForm((atual) => ({
+      ...atual,
+      [campo]: valor,
+    }));
+  }
 
-        <button
-          onClick={() => setModal(false)}
-          className="text-gray-400 hover:text-white text-2xl"
-        >
-          ×
-        </button>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto p-6">
-
-        <div className="space-y-5">
-
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center sm:p-4"
+      role="presentation"
+    >
+      <form
+        onSubmit={salvarAluno}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-aluno-modal"
+        className="flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[#101010] sm:h-auto sm:max-h-[92dvh] sm:rounded-3xl sm:border sm:border-white/10"
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-5 pb-4 pt-[max(20px,env(safe-area-inset-top))] sm:px-6 sm:pt-5">
           <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Nome
-            </label>
-
-            <input
-              value={form.nome}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  nome: e.target.value,
-                })
-              }
-              className="w-full h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            />
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-500">
+              Alunos
+            </p>
+            <h2 id="titulo-aluno-modal" className="mt-1 text-xl font-bold">
+              {editando ? "Editar aluno" : "Novo aluno"}
+            </h2>
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              CPF
-            </label>
-
-            <input
-              value={form.cpf}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  cpf: e.target.value,
-                })
-              }
-              className="w-full h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Telefone
-            </label>
-
-            <input
-              value={form.telefone}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  telefone: e.target.value,
-                })
-              }
-              className="w-full h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-
-            <select
-              value={form.faixa}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  faixa: e.target.value,
-                })
-              }
-              className="h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            >
-              <option value="Branca">Branca</option>
-              <option value="Cinza e Branca">Cinza e Branca</option>
-              <option value="Cinza">Cinza</option>
-              <option value="Cinza e Preta">Cinza e Preta</option>
-              <option value="Amarela e Branca">Amarela e Branca</option>
-              <option value="Amarela">Amarela</option>
-              <option value="Amarela e Preta">Amarela e Preta</option>
-              <option value="Laranja e Branca">Laranja e Branca</option>
-              <option value="Laranja">Laranja</option>
-              <option value="Laranja e Preta">Laranja e Preta</option>
-              <option value="Verde e Branca">Verde e Branca</option>
-              <option value="Verde">Verde</option>
-              <option value="Verde e Preta">Verde e Preta</option>
-              <option value="Azul">Azul</option>
-              <option value="Roxa">Roxa</option>
-              <option value="Marrom">Marrom</option>
-              <option value="Preta">Preta</option>
-            </select>
-
-            <select
-              value={form.graus}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  graus: Number(e.target.value),
-                })
-              }
-              className="h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            >
-              <option value="0">0 Grau</option>
-              <option value="1">1 Grau</option>
-              <option value="2">2 Graus</option>
-              <option value="3">3 Graus</option>
-              <option value="4">4 Graus</option>
-            </select>
-
-            <select
-              value={form.categoria}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  categoria: e.target.value,
-                })
-              }
-              className="h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            >
-              <option value="Kids">Kids</option>
-              <option value="Juvenil">Juvenil</option>
-              <option value="Adulto">Adulto</option>
-            </select>
-
-            <select
-              value={form.status}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status: e.target.value,
-                })
-              }
-              className="h-14 rounded-2xl bg-[#1A1A1A] px-4"
-            >
-              <option value="Ativo">Ativo</option>
-              <option value="Inativo">Inativo</option>
-            </select>
-
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-400 mb-2">
-              Turmas
-            </label>
-
-            <MultiSelect
-              options={turmas}
-              value={form.turmas}
-              onChange={(turmasSelecionadas) =>
-                setForm({
-                  ...form,
-                  turmas: turmasSelecionadas,
-                })
-              }
-              placeholder="Selecione as turmas"
-            />
-          </div>
-
+          <button
+            type="button"
+            onClick={() => setModal(false)}
+            aria-label="Fechar"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-      </div>
+        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="space-y-5">
+            <div>
+              <label htmlFor="aluno-nome" className="mb-2 block text-sm font-medium text-zinc-300">
+                Nome <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="aluno-nome"
+                value={form.nome}
+                onChange={(event) => atualizarCampo("nome", event.target.value)}
+                autoComplete="name"
+                required
+                placeholder="Nome completo"
+                className={inputClass}
+              />
+            </div>
 
-      {/* Footer */}
-      <div className="border-t border-white/10 p-5 flex justify-end gap-3 bg-[#121212]">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="aluno-cpf" className="mb-2 block text-sm font-medium text-zinc-300">
+                  CPF
+                </label>
+                <input
+                  id="aluno-cpf"
+                  value={form.cpf}
+                  onChange={(event) => atualizarCampo("cpf", event.target.value)}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="Opcional"
+                  className={inputClass}
+                />
+              </div>
 
-        <button
-          onClick={() => setModal(false)}
-          className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 transition"
-        >
-          Cancelar
-        </button>
+              <div>
+                <label htmlFor="aluno-telefone" className="mb-2 block text-sm font-medium text-zinc-300">
+                  Telefone
+                </label>
+                <input
+                  id="aluno-telefone"
+                  value={form.telefone}
+                  onChange={(event) => atualizarCampo("telefone", event.target.value)}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="Opcional"
+                  className={inputClass}
+                />
+              </div>
+            </div>
 
-        <button
-          onClick={salvarAluno}
-          className="px-6 py-3 rounded-2xl bg-red-700 hover:bg-red-600 transition"
-        >
-          Salvar
-        </button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="aluno-faixa" className="mb-2 block text-sm font-medium text-zinc-300">
+                  Faixa
+                </label>
+                <select
+                  id="aluno-faixa"
+                  value={form.faixa}
+                  onChange={(event) => atualizarCampo("faixa", event.target.value)}
+                  className={inputClass}
+                >
+                  {FAIXAS.map((faixa) => (
+                    <option key={faixa} value={faixa}>
+                      {faixa}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      </div>
+              <div>
+                <label htmlFor="aluno-graus" className="mb-2 block text-sm font-medium text-zinc-300">
+                  Graus
+                </label>
+                <select
+                  id="aluno-graus"
+                  value={form.graus}
+                  onChange={(event) => atualizarCampo("graus", Number(event.target.value))}
+                  className={inputClass}
+                >
+                  <option value={0}>Sem grau</option>
+                  <option value={1}>1 grau</option>
+                  <option value={2}>2 graus</option>
+                  <option value={3}>3 graus</option>
+                  <option value={4}>4 graus</option>
+                </select>
+              </div>
 
+              <div>
+                <label htmlFor="aluno-categoria" className="mb-2 block text-sm font-medium text-zinc-300">
+                  Categoria
+                </label>
+                <select
+                  id="aluno-categoria"
+                  value={form.categoria}
+                  onChange={(event) => atualizarCampo("categoria", event.target.value)}
+                  className={inputClass}
+                >
+                  <option value="Kids">Kids</option>
+                  <option value="Juvenil">Juvenil</option>
+                  <option value="Adulto">Adulto</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="aluno-status" className="mb-2 block text-sm font-medium text-zinc-300">
+                  Status
+                </label>
+                <select
+                  id="aluno-status"
+                  value={form.status}
+                  onChange={(event) => atualizarCampo("status", event.target.value)}
+                  className={inputClass}
+                >
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-zinc-300">
+                Turmas
+              </label>
+              <MultiSelect
+                options={turmas}
+                value={form.turmas}
+                onChange={(selecionadas) => atualizarCampo("turmas", selecionadas)}
+                placeholder="Selecione as turmas"
+              />
+              <p className="mt-2 text-xs leading-5 text-zinc-600">
+                A matrícula será atualizada junto com os dados do aluno.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 border-t border-white/10 bg-[#101010] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-5">
+          <button
+            type="button"
+            onClick={() => setModal(false)}
+            disabled={salvando}
+            className="h-12 flex-1 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-zinc-300 transition hover:bg-white/10 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            disabled={salvando}
+            className="flex h-12 flex-[1.25] items-center justify-center gap-2 rounded-2xl bg-red-700 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+          >
+            {salvando ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                Salvar aluno
+              </>
+            )}
+          </button>
+        </div>
+      </form>
     </div>
-  </div>
-)}
+  );
+}
