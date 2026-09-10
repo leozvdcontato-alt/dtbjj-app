@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { ehAluno, rotuloCargo } from "@/lib/permissoes";
+import { ehAdministrador, ehAluno, rotuloCargo } from "@/lib/permissoes";
 import { useAlunoPortal } from "@/hooks/useAlunoPortal";
 
 import PainelMais from "./PainelMais";
@@ -11,12 +11,23 @@ import Home from "./Home";
 import PainelAlunos from "./PainelAlunos";
 import PainelTurmas from "./PainelTurmas";
 import PainelChamada from "./PainelChamada";
+import PainelProfessores from "./PainelProfessores";
+import PainelLocais from "./PainelLocais";
 import BottomNavigation from "./navigation/BottomNavigation";
 import AlunoInicio from "./aluno/AlunoInicio";
 import AlunoTurmas from "./aluno/AlunoTurmas";
 import AlunoFrequencia from "./aluno/AlunoFrequencia";
+import AlunoCheckin from "./aluno/AlunoCheckin";
 
-const PAGINAS_ALUNO = new Set(["home", "turmas", "frequencia", "mais", "perfil"]);
+const PAGINAS_ALUNO = new Set([
+  "home",
+  "turmas",
+  "checkin",
+  "frequencia",
+  "mais",
+  "perfil",
+]);
+
 const PAGINAS_GESTAO = new Set([
   "home",
   "alunos",
@@ -27,17 +38,35 @@ const PAGINAS_GESTAO = new Set([
   "perfil",
 ]);
 
+const PAGINAS_ADMIN = ["professores", "locais"];
+
 export default function Dashboard() {
   const { usuario } = useAuth();
   const aluno = ehAluno(usuario);
+  const admin = ehAdministrador(usuario);
+  const tokenCheckin =
+    new URLSearchParams(window.location.search).get("checkin") || "";
 
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
-  const [tela, setTela] = useState({ pagina: "home", turma: null });
+  const [tela, setTela] = useState({
+    pagina: aluno && tokenCheckin ? "checkin" : "home",
+    turma: null,
+  });
 
   const portalAluno = useAlunoPortal(usuario?.aluno_id, aluno);
-  const paginasPermitidas = aluno ? PAGINAS_ALUNO : PAGINAS_GESTAO;
-  const paginaAtual = paginasPermitidas.has(tela.pagina) ? tela.pagina : "home";
+
+  const paginasPermitidas = useMemo(
+    () =>
+      aluno
+        ? PAGINAS_ALUNO
+        : new Set([...PAGINAS_GESTAO, ...(admin ? PAGINAS_ADMIN : [])]),
+    [admin, aluno]
+  );
+
+  const paginaAtual = paginasPermitidas.has(tela.pagina)
+    ? tela.pagina
+    : "home";
 
   useEffect(() => {
     if (aluno) return undefined;
@@ -49,24 +78,20 @@ export default function Dashboard() {
       supabase.from("turmas").select("*").order("nome"),
     ]).then(([resultadoAlunos, resultadoTurmas]) => {
       if (!ativo) return;
-
-      if (resultadoAlunos.error) {
-        console.error("Erro ao carregar alunos:", resultadoAlunos.error);
-      } else {
-        setAlunos(resultadoAlunos.data || []);
-      }
-
-      if (resultadoTurmas.error) {
-        console.error("Erro ao carregar turmas:", resultadoTurmas.error);
-      } else {
-        setTurmas(resultadoTurmas.data || []);
-      }
+      setAlunos(resultadoAlunos.error ? [] : resultadoAlunos.data || []);
+      setTurmas(resultadoTurmas.error ? [] : resultadoTurmas.data || []);
     });
 
     return () => {
       ativo = false;
     };
   }, [aluno]);
+
+  function limparTokenCheckin() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkin");
+    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  }
 
   return (
     <div className="min-h-screen bg-[#080808] text-white">
@@ -116,6 +141,12 @@ export default function Dashboard() {
               <AlunoInicio portal={portalAluno} setTela={setTela} />
             )}
             {paginaAtual === "turmas" && <AlunoTurmas portal={portalAluno} />}
+            {paginaAtual === "checkin" && (
+              <AlunoCheckin
+                tokenInicial={tokenCheckin}
+                onTokenConsumido={limparTokenCheckin}
+              />
+            )}
             {paginaAtual === "frequencia" && (
               <AlunoFrequencia portal={portalAluno} />
             )}
@@ -126,13 +157,13 @@ export default function Dashboard() {
               <Home alunos={alunos} turmas={turmas} setTela={setTela} />
             )}
             {paginaAtual === "alunos" && <PainelAlunos turmas={turmas} />}
-            {paginaAtual === "chamada" && (
-              <PainelChamada turmas={turmas} />
-            )}
+            {paginaAtual === "chamada" && <PainelChamada turmas={turmas} />}
             {paginaAtual === "turmas" && <PainelTurmas setTela={setTela} />}
             {paginaAtual === "turma" && (
               <TelaTurma turma={tela.turma} setTela={setTela} />
             )}
+            {paginaAtual === "professores" && admin && <PainelProfessores />}
+            {paginaAtual === "locais" && admin && <PainelLocais />}
           </>
         )}
 

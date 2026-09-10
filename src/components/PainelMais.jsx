@@ -1,9 +1,20 @@
-import { ChevronRight, LogOut, ShieldCheck, User } from "lucide-react";
+import {
+  ChevronRight,
+  LogOut,
+  MapPin,
+  ShieldCheck,
+  User,
+  UsersRound,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { rotuloCargo } from "@/lib/permissoes";
+import { ehAdministrador, rotuloCargo } from "@/lib/permissoes";
 
 export default function PainelMais({ setTela }) {
   const { logout, usuario } = useAuth();
+  const admin = ehAdministrador(usuario);
+
+  const itemClass =
+    "flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#121212] p-4 text-left transition active:bg-zinc-900";
 
   return (
     <div className="space-y-4">
@@ -31,7 +42,7 @@ export default function PainelMais({ setTela }) {
       <button
         type="button"
         onClick={() => setTela({ pagina: "perfil", turma: null })}
-        className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-[#121212] p-4 text-left transition active:bg-zinc-900"
+        className={itemClass}
       >
         <div className="flex items-center gap-3">
           <User size={21} className="text-zinc-400" />
@@ -39,6 +50,34 @@ export default function PainelMais({ setTela }) {
         </div>
         <ChevronRight size={18} className="text-zinc-600" />
       </button>
+
+      {admin ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setTela({ pagina: "professores", turma: null })}
+            className={itemClass}
+          >
+            <div className="flex items-center gap-3">
+              <UsersRound size={21} className="text-zinc-400" />
+              <span className="font-medium">Professores</span>
+            </div>
+            <ChevronRight size={18} className="text-zinc-600" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTela({ pagina: "locais", turma: null })}
+            className={itemClass}
+          >
+            <div className="flex items-center gap-3">
+              <MapPin size={21} className="text-zinc-400" />
+              <span className="font-medium">Locais e QR</span>
+            </div>
+            <ChevronRight size={18} className="text-zinc-600" />
+          </button>
+        </>
+      ) : null}
 
       <button
         type="button"

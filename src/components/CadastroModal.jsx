@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 const ESTADO_INICIAL = {
   nome: "",
   email: "",
+  telefone: "",
+  cpf: "",
   senha: "",
   confirmarSenha: "",
   codigo: "",
@@ -18,20 +20,13 @@ export default function CadastroModal({ aberto, fechar }) {
   if (!aberto) return null;
 
   function atualizarCampo(campo, valor) {
-    setForm((atual) => ({
-      ...atual,
-      [campo]: valor,
-    }));
-  }
-
-  function limparFormulario() {
-    setForm(ESTADO_INICIAL);
-    setErro("");
+    setForm((atual) => ({ ...atual, [campo]: valor }));
   }
 
   function fecharModal() {
     if (loading) return;
-    limparFormulario();
+    setForm(ESTADO_INICIAL);
+    setErro("");
     setSucesso("");
     fechar();
   }
@@ -46,13 +41,8 @@ export default function CadastroModal({ aberto, fechar }) {
     setErro("");
     setSucesso("");
 
-    if (!nome) {
-      setErro("Informe seu nome.");
-      return;
-    }
-
-    if (!email) {
-      setErro("Informe seu e-mail.");
+    if (!nome || !email || !codigo) {
+      setErro("Preencha nome, e-mail e código da turma.");
       return;
     }
 
@@ -66,27 +56,19 @@ export default function CadastroModal({ aberto, fechar }) {
       return;
     }
 
-    if (!codigo) {
-      setErro("Informe o código da academia.");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { data: academias, error: erroAcademia } = await supabase.rpc(
-        "validar_codigo_academia",
+      const { data: turmas, error: erroTurma } = await supabase.rpc(
+        "validar_codigo_turma",
         { p_codigo: codigo }
       );
 
-      if (erroAcademia) {
-        throw erroAcademia;
-      }
+      if (erroTurma) throw erroTurma;
 
-      const academia = academias?.[0];
-
-      if (!academia) {
-        setErro("Código da academia inválido.");
+      const turma = turmas?.[0];
+      if (!turma) {
+        setErro("Código da turma inválido.");
         return;
       }
 
@@ -96,7 +78,9 @@ export default function CadastroModal({ aberto, fechar }) {
         options: {
           data: {
             nome,
-            academia_id: academia.id,
+            telefone: form.telefone.trim() || null,
+            cpf: form.cpf.trim() || null,
+            codigo_turma: codigo,
           },
         },
       });
@@ -111,9 +95,11 @@ export default function CadastroModal({ aberto, fechar }) {
         return;
       }
 
-      limparFormulario();
+      setForm(ESTADO_INICIAL);
       setSucesso(
-        `Conta criada para ${academia.nome}. Se a confirmação por e-mail estiver habilitada, confirme o endereço antes de entrar.`
+        "Conta criada para " +
+          turma.turma_nome +
+          ". Confirme seu e-mail para entrar, se solicitado."
       );
     } catch (error) {
       console.error("Erro ao criar conta:", error);
@@ -123,16 +109,19 @@ export default function CadastroModal({ aberto, fechar }) {
     }
   }
 
+  const inputClass =
+    "h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 text-white outline-none transition focus:border-red-700";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#111111] p-6 shadow-2xl">
         <div className="mb-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
-            Acesso DTBJJ
+            Acesso de aluno
           </p>
           <h2 className="text-2xl font-bold text-white">Criar conta</h2>
           <p className="mt-2 text-sm leading-6 text-gray-400">
-            Use o código fornecido pela academia para vincular sua conta.
+            O cadastro público é exclusivo para alunos. Use o código da turma fornecido pela DTBJJ.
           </p>
         </div>
 
@@ -141,53 +130,69 @@ export default function CadastroModal({ aberto, fechar }) {
             <div className="rounded-2xl border border-emerald-900/40 bg-emerald-950/30 p-4 text-sm leading-6 text-emerald-300">
               {sucesso}
             </div>
-
             <button
               type="button"
               onClick={fecharModal}
-              className="h-12 w-full rounded-xl bg-red-700 font-semibold text-white transition hover:bg-red-600"
+              className="h-12 w-full rounded-xl bg-red-700 font-semibold"
             >
               Voltar para o login
             </button>
           </div>
         ) : (
           <form onSubmit={criarConta} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm text-gray-400">Nome completo</label>
+            <Campo label="Nome completo">
               <input
                 type="text"
                 autoComplete="name"
                 value={form.nome}
                 onChange={(event) => atualizarCampo("nome", event.target.value)}
-                className="h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 text-white outline-none transition focus:border-red-700"
+                className={inputClass}
               />
-            </div>
+            </Campo>
 
-            <div>
-              <label className="mb-2 block text-sm text-gray-400">E-mail</label>
+            <Campo label="E-mail">
               <input
                 type="email"
                 autoComplete="email"
                 value={form.email}
                 onChange={(event) => atualizarCampo("email", event.target.value)}
-                className="h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 text-white outline-none transition focus:border-red-700"
+                className={inputClass}
               />
+            </Campo>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Campo label="Telefone">
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  value={form.telefone}
+                  onChange={(event) => atualizarCampo("telefone", event.target.value)}
+                  className={inputClass}
+                />
+              </Campo>
+
+              <Campo label="CPF">
+                <input
+                  inputMode="numeric"
+                  value={form.cpf}
+                  onChange={(event) => atualizarCampo("cpf", event.target.value)}
+                  className={inputClass}
+                />
+              </Campo>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm text-gray-400">Senha</label>
+              <Campo label="Senha">
                 <input
                   type="password"
                   autoComplete="new-password"
                   value={form.senha}
                   onChange={(event) => atualizarCampo("senha", event.target.value)}
-                  className="h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 text-white outline-none transition focus:border-red-700"
+                  className={inputClass}
                 />
-              </div>
+              </Campo>
 
-              <div>
-                <label className="mb-2 block text-sm text-gray-400">Confirmar senha</label>
+              <Campo label="Confirmar senha">
                 <input
                   type="password"
                   autoComplete="new-password"
@@ -195,15 +200,12 @@ export default function CadastroModal({ aberto, fechar }) {
                   onChange={(event) =>
                     atualizarCampo("confirmarSenha", event.target.value)
                   }
-                  className="h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 text-white outline-none transition focus:border-red-700"
+                  className={inputClass}
                 />
-              </div>
+              </Campo>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm text-gray-400">
-                Código da academia
-              </label>
+            <Campo label="Código da turma">
               <input
                 type="text"
                 autoCapitalize="characters"
@@ -211,31 +213,30 @@ export default function CadastroModal({ aberto, fechar }) {
                 onChange={(event) =>
                   atualizarCampo("codigo", event.target.value.toUpperCase())
                 }
-                placeholder="Ex.: DTBJJ2026"
-                className="h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 font-medium uppercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:tracking-normal placeholder:text-gray-600 focus:border-red-700"
+                placeholder="Ex.: DT-AB12CD34"
+                className={inputClass + " font-medium uppercase tracking-wide"}
               />
-            </div>
+            </Campo>
 
-            {erro && (
+            {erro ? (
               <div className="rounded-xl border border-red-900/30 bg-red-950/30 p-3 text-sm text-red-300">
                 {erro}
               </div>
-            )}
+            ) : null}
 
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="h-12 flex-1 rounded-xl bg-red-700 font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-12 flex-1 rounded-xl bg-red-700 font-semibold disabled:opacity-50"
               >
                 {loading ? "Criando conta..." : "Criar conta"}
               </button>
-
               <button
                 type="button"
                 onClick={fecharModal}
                 disabled={loading}
-                className="h-12 rounded-xl bg-[#1A1A1A] px-5 font-medium text-gray-300 transition hover:bg-[#222222] disabled:opacity-50"
+                className="h-12 rounded-xl bg-[#1A1A1A] px-5 font-medium text-gray-300"
               >
                 Cancelar
               </button>
@@ -243,6 +244,15 @@ export default function CadastroModal({ aberto, fechar }) {
           </form>
         )}
       </div>
+    </div>
+  );
+}
+
+function Campo({ label, children }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm text-gray-400">{label}</label>
+      {children}
     </div>
   );
 }
