@@ -9,6 +9,7 @@ const CAMPOS_ALUNO = [
   "graus",
   "status",
   "categoria",
+  "foto",
   "created_at",
   "academia_id",
   "matriculas(turma_id,turmas(id,nome))",
