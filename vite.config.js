@@ -12,6 +12,12 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
 
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+      },
+
       devOptions: {
         enabled: true,
       },
