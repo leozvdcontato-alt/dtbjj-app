@@ -113,7 +113,10 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const localId = Number(body?.local_id);
-    const formato = body?.formato === "story" ? "story" : "a4";
+    const formato =
+      body?.formato === "story" || body?.formato === "qr"
+        ? body.formato
+        : "a4";
 
     if (!Number.isInteger(localId) || localId <= 0) {
       return json({ error: "Local inválido." }, 400);
@@ -139,18 +142,22 @@ Deno.serve(async (req: Request) => {
     });
 
     const svg =
-      formato === "story"
-        ? montarStory(local.nome, qrSvg)
-        : montarA4(local.nome, qrSvg);
+      formato === "qr"
+        ? qrSvg
+        : formato === "story"
+          ? montarStory(local.nome, qrSvg)
+          : montarA4(local.nome, qrSvg);
 
     return json({
       svg,
       formato,
       nome_local: local.nome,
       filename:
-        formato === "story"
-          ? `dtbjj-checkin-${local.id}-story.svg`
-          : `dtbjj-checkin-${local.id}-a4.png`,
+        formato === "qr"
+          ? `dtbjj-checkin-${local.id}.svg`
+          : formato === "story"
+            ? `dtbjj-checkin-${local.id}-story.svg`
+            : `dtbjj-checkin-${local.id}-a4.png`,
     });
   } catch {
     return json({ error: "Não foi possível gerar o material agora." }, 500);

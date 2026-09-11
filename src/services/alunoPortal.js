@@ -26,7 +26,12 @@ export async function carregarPortalAluno(alunoId) {
             nome,
             dias,
             horario,
-            professor
+            professor,
+            turma_horarios (
+              id,
+              dia_semana,
+              horario_inicio
+            )
           )
         `)
         .eq("aluno_id", alunoId)

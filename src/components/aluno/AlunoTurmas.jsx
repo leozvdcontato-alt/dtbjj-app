@@ -1,4 +1,5 @@
 import { Clock3, GraduationCap, UserRound } from "lucide-react";
+import { agruparHorarios } from "@/lib/horarios";
 
 export default function AlunoTurmas({ portal }) {
   const { turmas, loading, erro } = portal;
@@ -38,12 +39,21 @@ export default function AlunoTurmas({ portal }) {
               <h3 className="text-lg font-semibold">{turma.nome}</h3>
 
               <div className="mt-4 space-y-2 text-sm text-zinc-400">
-                {(turma.dias || turma.horario) && (
+                {turma.turma_horarios?.length ? (
+                  <div className="flex items-start gap-2">
+                    <Clock3 size={16} className="mt-0.5 shrink-0 text-zinc-600" />
+                    <div className="space-y-1">
+                      {agruparHorarios(turma.turma_horarios).map((grupo) => (
+                        <p key={grupo.texto}>{grupo.texto}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : (turma.dias || turma.horario) ? (
                   <div className="flex items-center gap-2">
                     <Clock3 size={16} className="text-zinc-600" />
                     <span>{[turma.dias, turma.horario].filter(Boolean).join(" · ")}</span>
                   </div>
-                )}
+                ) : null}
 
                 {turma.professor && (
                   <div className="flex items-center gap-2">
