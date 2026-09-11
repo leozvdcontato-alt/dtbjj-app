@@ -9,6 +9,7 @@ const corsHeaders = {
 function gerarSenhaTemporaria() {
   const bytes = new Uint32Array(4);
   crypto.getRandomValues(bytes);
+
   return `Dtbjj!${bytes[0].toString(36)}${bytes[1].toString(36)}${bytes[2].toString(36)}${bytes[3].toString(36)}`;
 }
 
@@ -24,16 +25,25 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  let tokenProfessor: string | null = null;
+
   try {
     const authHeader = req.headers.get("Authorization");
+
     if (!authHeader?.startsWith("Bearer ")) {
       return json({ error: "Não autorizado." }, 401);
     }
 
     const jwt = authHeader.replace("Bearer ", "");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const admin = createClient(supabaseUrl, serviceRoleKey);
 
     const {
       data: { user },
@@ -41,7 +51,10 @@ Deno.serve(async (req: Request) => {
     } = await admin.auth.getUser(jwt);
 
     if (userError || !user) {
-      return json({ error: "Sessão inválida. Entre novamente e tente de novo." }, 401);
+      return json(
+        { error: "Sessão inválida. Entre novamente e tente de novo." },
+        401
+      );
     }
 
     const { data: perfil, error: perfilError } = await admin
@@ -70,20 +83,46 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Nome e e-mail são obrigatórios." }, 400);
     }
 
+    tokenProfessor = crypto.randomUUID();
+
+    const { error: pendingError } = await admin
+      .from("professor_criacoes_pendentes")
+      .insert({
+        token: tokenProfessor,
+        email,
+        nome,
+        academia_id: perfil.academia_id,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      });
+
+    if (pendingError) {
+      return json(
+        {
+          error: "Não foi possível preparar a criação do professor.",
+          detail: pendingError.message,
+        },
+        500
+      );
+    }
+
     const senhaTemporaria = gerarSenhaTemporaria();
 
     const { data, error } = await admin.auth.admin.createUser({
       email,
       password: senhaTemporaria,
       email_confirm: true,
-      user_metadata: { nome },
-      app_metadata: {
-        dtbjj_role: "Professor",
-        academia_id: perfil.academia_id,
+      user_metadata: {
+        nome,
+        dtbjj_professor_token: tokenProfessor,
       },
     });
 
     if (error) {
+      await admin
+        .from("professor_criacoes_pendentes")
+        .delete()
+        .eq("token", tokenProfessor);
+
       const mensagem = error.message.toLowerCase();
 
       if (mensagem.includes("already") || mensagem.includes("registered")) {
@@ -91,7 +130,10 @@ Deno.serve(async (req: Request) => {
       }
 
       return json(
-        { error: "Não foi possível criar o professor. Tente novamente." },
+        {
+          error: "Não foi possível criar o professor.",
+          detail: error.message,
+        },
         400
       );
     }
@@ -103,7 +145,20 @@ Deno.serve(async (req: Request) => {
       senha_temporaria: senhaTemporaria,
       message: "Acesso do professor criado com sucesso.",
     });
-  } catch {
-    return json({ error: "Erro interno ao criar professor." }, 500);
+  } catch (error) {
+    if (tokenProfessor) {
+      await admin
+        .from("professor_criacoes_pendentes")
+        .delete()
+        .eq("token", tokenProfessor);
+    }
+
+    return json(
+      {
+        error: "Erro interno ao criar professor.",
+        detail: error instanceof Error ? error.message : "Erro desconhecido",
+      },
+      500
+    );
   }
 });
