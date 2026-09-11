@@ -1,11 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, QrCode, XCircle } from "lucide-react";
+import {
+  Camera,
+  CheckCircle2,
+  QrCode,
+  RotateCcw,
+  X,
+  XCircle,
+} from "lucide-react";
+import QrScanner from "qr-scanner";
 import { registrarCheckin } from "@/services/checkin";
+
+function extrairToken(valor) {
+  if (!valor) return "";
+
+  try {
+    const url = new URL(valor);
+    return url.searchParams.get("checkin") || valor;
+  } catch {
+    return valor;
+  }
+}
 
 export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const frameRef = useRef(null);
+  const scannerRef = useRef(null);
   const processandoRef = useRef(false);
 
   const [estado, setEstado] = useState(tokenInicial ? "processando" : "inicio");
@@ -13,17 +31,17 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
   const [detalhe, setDetalhe] = useState("");
   const [erroCamera, setErroCamera] = useState("");
 
-  function pararCamera() {
-    if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    frameRef.current = null;
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+  function encerrarScanner() {
+    scannerRef.current?.stop();
+    scannerRef.current?.destroy();
+    scannerRef.current = null;
   }
 
   async function concluir(token) {
     if (!token || processandoRef.current) return;
 
     processandoRef.current = true;
+    encerrarScanner();
     setEstado("processando");
     setMensagem("");
     setDetalhe("");
@@ -36,7 +54,8 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
       setMensagem(resultado?.mensagem || "Não foi possível realizar o check-in.");
       setDetalhe(
         resultado?.turma_nome
-          ? resultado.turma_nome + (resultado.horario ? " • " + resultado.horario : "")
+          ? resultado.turma_nome +
+              (resultado.horario ? " • " + resultado.horario : "")
           : ""
       );
 
@@ -54,68 +73,79 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
     setErroCamera("");
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setErroCamera("A câmera não está disponível neste navegador.");
-      return;
-    }
-
-    if (!window.BarcodeDetector) {
       setErroCamera(
-        "O leitor interno de QR não é compatível com este navegador. Use a câmera normal do celular para escanear o QR do local."
+        "A câmera não está disponível neste navegador. Verifique se o app está aberto em uma conexão segura."
       );
       return;
     }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
+    setEstado("camera");
 
-      streamRef.current = stream;
-      setEstado("camera");
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      if (!videoRef.current) return;
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
-
-      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-
-      const ler = async () => {
-        if (!videoRef.current || !streamRef.current) return;
-
-        try {
-          const codigos = await detector.detect(videoRef.current);
-          const valor = codigos?.[0]?.rawValue;
-
-          if (valor) {
-            let token = valor;
-
-            try {
-              const url = new URL(valor);
-              token = url.searchParams.get("checkin") || valor;
-            } catch {
-              token = valor;
-            }
-
-            pararCamera();
-            await concluir(token);
-            return;
-          }
-        } catch {
-          // continua lendo enquanto a câmera estiver ativa
-        }
-
-        frameRef.current = requestAnimationFrame(ler);
-      };
-
-      frameRef.current = requestAnimationFrame(ler);
-    } catch {
-      pararCamera();
+    if (!videoRef.current) {
       setEstado("inicio");
-      setErroCamera("Não foi possível acessar a câmera. Verifique a permissão do navegador.");
+      return;
     }
+
+    try {
+      encerrarScanner();
+
+      const scanner = new QrScanner(
+        videoRef.current,
+        (resultado) => {
+          const valor =
+            typeof resultado === "string" ? resultado : resultado?.data;
+
+          if (!valor) return;
+
+          const token = extrairToken(valor);
+          concluir(token);
+        },
+        {
+          preferredCamera: "environment",
+          highlightScanRegion: false,
+          highlightCodeOutline: false,
+          returnDetailedScanResult: true,
+          maxScansPerSecond: 10,
+          calculateScanRegion(video) {
+            const menorLado = Math.min(video.videoWidth, video.videoHeight);
+            const tamanho = Math.round(menorLado * 0.68);
+
+            return {
+              x: Math.round((video.videoWidth - tamanho) / 2),
+              y: Math.round((video.videoHeight - tamanho) / 2),
+              width: tamanho,
+              height: tamanho,
+              downScaledWidth: 400,
+              downScaledHeight: 400,
+            };
+          },
+        }
+      );
+
+      scannerRef.current = scanner;
+      await scanner.start();
+    } catch (error) {
+      encerrarScanner();
+      setEstado("inicio");
+
+      const nome = error?.name || "";
+      const mensagem =
+        nome === "NotAllowedError"
+          ? "Permita o acesso à câmera nas configurações do navegador."
+          : nome === "NotFoundError"
+            ? "Nenhuma câmera foi encontrada neste aparelho."
+            : "Não foi possível abrir a câmera. Tente novamente.";
+
+      setErroCamera(mensagem);
+    }
+  }
+
+  function cancelarCamera() {
+    encerrarScanner();
+    setEstado("inicio");
+    setErroCamera("");
   }
 
   useEffect(() => {
@@ -125,36 +155,73 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
     return undefined;
   }, [tokenInicial]);
 
-  useEffect(() => () => pararCamera(), []);
+  useEffect(() => () => encerrarScanner(), []);
 
   const sucesso = estado === "sucesso";
 
   return (
     <div className="space-y-5">
-      <header className="text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-700 text-white shadow-lg shadow-red-950/30">
-          <QrCode size={30} />
-        </div>
-        <h2 className="mt-4 text-2xl font-bold">Check-in</h2>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
-          Escaneie o QR Code do local. O check-in abre 15 minutos antes da aula e fecha 1 hora após o início.
-        </p>
-      </header>
+      {estado !== "camera" ? (
+        <header className="text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-700 text-white shadow-lg shadow-red-950/30">
+            <QrCode size={30} />
+          </div>
+
+          <h2 className="mt-4 text-2xl font-bold">Check-in</h2>
+
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
+            Escaneie o QR Code do local. O check-in abre 15 minutos antes da
+            aula e fecha 1 hora após o início.
+          </p>
+        </header>
+      ) : null}
 
       {estado === "camera" ? (
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-black">
-          <video ref={videoRef} playsInline muted className="aspect-square w-full object-cover" />
-          <div className="p-4">
-            <button
-              type="button"
-              onClick={() => {
-                pararCamera();
-                setEstado("inicio");
-              }}
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-zinc-300"
-            >
-              Cancelar leitura
-            </button>
+        <section className="fixed inset-0 z-50 flex flex-col bg-black">
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="relative aspect-square w-[72vw] max-w-[340px] rounded-[32px] shadow-[0_0_0_9999px_rgba(0,0,0,0.58)]">
+                <span className="absolute left-0 top-0 h-14 w-14 rounded-tl-[28px] border-l-4 border-t-4 border-red-600" />
+                <span className="absolute right-0 top-0 h-14 w-14 rounded-tr-[28px] border-r-4 border-t-4 border-red-600" />
+                <span className="absolute bottom-0 left-0 h-14 w-14 rounded-bl-[28px] border-b-4 border-l-4 border-red-600" />
+                <span className="absolute bottom-0 right-0 h-14 w-14 rounded-br-[28px] border-b-4 border-r-4 border-red-600" />
+
+                <div className="absolute left-5 right-5 top-1/2 h-0.5 -translate-y-1/2 animate-pulse bg-red-500/80 shadow-[0_0_14px_rgba(239,68,68,0.85)]" />
+              </div>
+            </div>
+
+            <div className="absolute inset-x-0 top-0 flex items-center justify-between px-5 pb-5 pt-[max(18px,env(safe-area-inset-top))]">
+              <button
+                type="button"
+                onClick={cancelarCamera}
+                aria-label="Fechar câmera"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md"
+              >
+                <X size={22} />
+              </button>
+
+              <div className="rounded-full bg-black/45 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md">
+                Ler QR Code
+              </div>
+
+              <div className="h-11 w-11" aria-hidden="true" />
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 px-6 pb-[max(28px,env(safe-area-inset-bottom))] text-center">
+              <p className="text-lg font-semibold text-white">
+                Posicione o QR dentro do quadrado
+              </p>
+              <p className="mt-2 text-sm text-white/65">
+                A leitura acontece automaticamente.
+              </p>
+            </div>
           </div>
         </section>
       ) : estado === "processando" ? (
@@ -169,11 +236,16 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
           ) : (
             <XCircle size={42} className="mx-auto text-red-400" />
           )}
+
           <h3 className="mt-4 text-lg font-semibold">
             {sucesso ? "Presença registrada" : "Check-in não realizado"}
           </h3>
+
           <p className="mt-2 text-sm leading-6 text-zinc-400">{mensagem}</p>
-          {detalhe ? <p className="mt-2 text-sm font-semibold text-white">{detalhe}</p> : null}
+
+          {detalhe ? (
+            <p className="mt-2 text-sm font-semibold text-white">{detalhe}</p>
+          ) : null}
 
           <button
             type="button"
@@ -182,8 +254,9 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
               setMensagem("");
               setDetalhe("");
             }}
-            className="mt-5 h-12 w-full rounded-2xl bg-white/10 text-sm font-semibold text-white"
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/10 text-sm font-semibold text-white"
           >
+            <RotateCcw size={17} />
             Ler outro QR
           </button>
         </section>
@@ -205,7 +278,8 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
           ) : null}
 
           <p className="mt-4 text-center text-xs leading-5 text-zinc-600">
-            Você também pode usar a câmera normal do celular. Ao abrir o QR, o app conclui o check-in após o login.
+            Funciona no PWA do iPhone e Android. Você também pode escanear o QR
+            pela câmera normal do celular.
           </p>
         </section>
       )}
