@@ -413,8 +413,16 @@ export default function PainelAlunos({ turmas = [] }) {
                   className="group w-full rounded-3xl border border-white/10 bg-[#141414] p-4 text-left transition hover:border-white/15 hover:bg-[#171717] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-sm font-bold text-zinc-400">
-                      {aluno.nome?.slice(0, 1)?.toUpperCase() || "A"}
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/5 text-sm font-bold text-zinc-400">
+                      {aluno.foto ? (
+                        <img
+                          src={aluno.foto}
+                          alt={`Foto de ${aluno.nome}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        aluno.nome?.slice(0, 1)?.toUpperCase() || "A"
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">
