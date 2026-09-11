@@ -2,20 +2,8 @@ import { useEffect, useState } from "react";
 import { ChevronRight, Copy, MapPin, MessageCircle } from "lucide-react";
 import { listarTurmas } from "@/services/turmas";
 import { useToast } from "@/contexts/ToastContext";
-
-const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+import { agruparHorarios } from "@/lib/horarios";
 const APP_URL = "https://dtbjj-app.vercel.app";
-
-function resumoHorarios(horarios = []) {
-  if (!horarios.length) return "";
-
-  return horarios
-    .map(
-      (item) =>
-        DIAS[item.dia_semana] + " " + String(item.horario_inicio).slice(0, 5)
-    )
-    .join(" • ");
-}
 
 function mensagemConvite(turma) {
   return [
@@ -90,11 +78,18 @@ export default function PainelTurmas({ setTela }) {
             >
               <div className="min-w-0">
                 <h3 className="truncate text-lg font-bold">{turma.nome}</h3>
-                <p className="mt-1 text-sm text-zinc-500">
-                  {resumoHorarios(turma.turma_horarios) ||
-                    [turma.dias, turma.horario].filter(Boolean).join(" • ") ||
-                    "Horário ainda não estruturado"}
-                </p>
+                {turma.turma_horarios?.length ? (
+                  <div className="mt-1 space-y-1 text-sm text-zinc-500">
+                    {agruparHorarios(turma.turma_horarios).map((grupo) => (
+                      <p key={grupo.texto}>{grupo.texto}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {[turma.dias, turma.horario].filter(Boolean).join(" • ") ||
+                      "Horário ainda não estruturado"}
+                  </p>
+                )}
                 {turma.locais?.nome ? (
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-600">
                     <MapPin size={14} />
