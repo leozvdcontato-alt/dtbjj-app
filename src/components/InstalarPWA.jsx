@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -35,7 +35,7 @@ export default function InstalarPWA() {
   const [promptInstalacao, setPromptInstalacao] = useState(null);
   const [instalado, setInstalado] = useState(estaInstalado);
   const [copiado, setCopiado] = useState(false);
-  const plataforma = useMemo(detectarPlataforma, []);
+  const [plataforma] = useState(detectarPlataforma);
   const urlInstalacao = window.location.origin + "/instalar";
 
   useEffect(() => {
