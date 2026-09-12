@@ -40,7 +40,7 @@ export default function BottomNavigation({ tela, setTela, usuario }) {
                 key={pagina}
                 type="button"
                 onClick={() => setTela({ pagina, turma: null })}
-                className="relative flex min-w-0 flex-1 flex-col items-center justify-end text-[11px] font-semibold text-white"
+                className="relative flex min-h-12 min-w-0 flex-1 flex-col items-center justify-end text-[11px] font-semibold text-white"
               >
                 <div className="-mt-7 flex h-14 w-14 items-center justify-center rounded-full border-4 border-[#080808] bg-red-700 shadow-lg shadow-red-950/40">
                   <Icone size={24} strokeWidth={2.4} />
@@ -55,8 +55,9 @@ export default function BottomNavigation({ tela, setTela, usuario }) {
               key={pagina}
               type="button"
               onClick={() => setTela({ pagina, turma: null })}
+              aria-current={ativo ? "page" : undefined}
               className={
-                "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[11px] font-medium transition " +
+                "flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[11px] font-medium transition " +
                 (ativo ? "text-red-500" : "text-zinc-500 active:text-zinc-200")
               }
             >
