@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   Copy,
-  ExternalLink,
-  Mail,
+  MessageCircle,
+  ShieldCheck,
   UserPlus,
   UserRound,
 } from "lucide-react";
@@ -89,7 +89,7 @@ export default function PainelProfessores() {
 
       setNome("");
       setEmail("");
-      setConviteCriado(convite);
+      setConviteCriado({ ...convite, nome: nome.trim() });
       await carregar();
       mostrarToast("Convite do professor preparado.", "success");
     } catch (error) {
@@ -128,20 +128,29 @@ export default function PainelProfessores() {
     }
   }
 
-  function visualizarEmail() {
-    if (!conviteCriado?.email_html) return;
+  function enviarWhatsApp() {
+    if (!conviteCriado?.invite_link) return;
 
-    const blob = new Blob([conviteCriado.email_html], {
-      type: "text/html;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const janela = window.open(url, "_blank", "noopener,noreferrer");
+    const primeiroNome =
+      conviteCriado.nome?.trim()?.split(/\s+/)?.[0] || "Professor";
 
-    if (!janela) {
-      mostrarToast("Permita pop-ups para visualizar o e-mail.", "error");
-    }
+    const mensagem = [
+      `Olá, ${primeiroNome}! Seu acesso como professor ao DTBJJ APP foi criado.`,
+      "",
+      "Use o link abaixo para criar sua senha:",
+      conviteCriado.invite_link,
+      "",
+      "Depois, você já poderá acessar o app normalmente.",
+      "",
+      "Para instalar o DTBJJ APP no celular:",
+      "https://dtbjj-app.vercel.app/instalar?v=2",
+    ].join("\n");
 
-    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(mensagem)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   return (
@@ -191,36 +200,35 @@ export default function PainelProfessores() {
       {conviteCriado ? (
         <section className="rounded-3xl border border-emerald-900/40 bg-emerald-950/20 p-5">
           <div className="flex items-center gap-3 text-emerald-300">
-            <Mail size={20} />
-            <h3 className="font-semibold">Convite preparado</h3>
+            <ShieldCheck size={20} />
+            <h3 className="font-semibold">Convite seguro pronto</h3>
           </div>
 
           <p className="mt-3 text-sm text-zinc-300">
             {conviteCriado.email}
           </p>
           <p className="mt-2 text-xs leading-5 text-zinc-500">
-            O professor já foi criado, mas o e-mail automático ainda está
-            desativado enquanto o modelo passa por aprovação.
+            O professor já foi criado. Envie o convite para ele definir a
+            própria senha e acessar o DTBJJ APP.
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={visualizarEmail}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold"
-            >
-              <ExternalLink size={16} />
-              Ver e-mail
-            </button>
-            <button
-              type="button"
-              onClick={copiarLink}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold"
-            >
-              <Copy size={16} />
-              Copiar link
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={enviarWhatsApp}
+            className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600"
+          >
+            <MessageCircle size={18} />
+            Enviar convite no WhatsApp
+          </button>
+
+          <button
+            type="button"
+            onClick={copiarLink}
+            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold"
+          >
+            <Copy size={16} />
+            Copiar link do convite
+          </button>
         </section>
       ) : null}
 
