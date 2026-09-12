@@ -27,9 +27,9 @@ export default defineConfig({
 
       manifest: {
         id: "/",
-        name: "Tatame Pro",
-        short_name: "Tatame",
-        description: "Sistema de gestão para academias de Jiu-Jitsu",
+        name: "DTBJJ APP",
+        short_name: "DTBJJ APP",
+        description: "Aplicativo oficial da DTBJJ para alunos, professores e gestão",
         theme_color: "#991b1b",
         background_color: "#000000",
         display: "standalone",
