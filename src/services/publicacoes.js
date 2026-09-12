@@ -140,6 +140,15 @@ export async function comentarPublicacao(publicacaoId, usuarioId, conteudo) {
   return data;
 }
 
+export async function excluirComentario(comentarioId) {
+  const { error } = await supabase
+    .from("publicacao_comentarios")
+    .delete()
+    .eq("id", comentarioId);
+
+  if (error) throw error;
+}
+
 export async function registrarVisualizacao(publicacaoId, usuarioId) {
   if (!publicacaoId || !usuarioId) return;
 
