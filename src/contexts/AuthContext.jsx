@@ -104,6 +104,10 @@ export function AuthProvider({ children }) {
         return;
       }
 
+      if (event === "USER_UPDATED") {
+        return;
+      }
+
       setLoading(true);
 
       setTimeout(async () => {
