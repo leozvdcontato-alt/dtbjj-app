@@ -41,6 +41,11 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
           "confirmar_troca_senha_professor"
         );
         if (confirmarError) throw confirmarError;
+
+        setSenha("");
+        setConfirmar("");
+        await onConcluido?.();
+        return;
       }
 
       setSucesso(true);
