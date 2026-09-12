@@ -12,9 +12,14 @@ export async function listarTurmas() {
       academia_id,
       codigo_convite,
       local_id,
-      locais(id,nome),
-      turma_horarios(id,dia_semana,horario_inicio),
-      turma_professores(usuario_id,usuarios(id,nome))
+      locais(id,nome,endereco),
+      turma_horarios(
+        id,
+        dia_semana,
+        horario_inicio,
+        professor,
+        turma_horario_professores(usuario_id)
+      )
     `)
     .order("nome");
 

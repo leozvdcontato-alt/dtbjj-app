@@ -27,3 +27,20 @@ export function horaAgoraApp() {
   const { hour, minute } = partesAgora();
   return `${hour}:${minute}`;
 }
+
+export function diaSemanaApp() {
+  const abreviado = new Intl.DateTimeFormat("en-US", {
+    timeZone: FUSO_APP,
+    weekday: "short",
+  }).format(new Date());
+
+  return {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  }[abreviado];
+}

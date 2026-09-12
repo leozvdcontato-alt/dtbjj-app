@@ -1,24 +1,18 @@
 import { supabase } from "@/lib/supabase";
-import { dataHojeApp, horaAgoraApp } from "@/lib/dataHora";
 
-export async function criarChamada({
-  turmaId,
-  professor,
-}) {
-  const { data, error } = await supabase
-    .from("chamadas")
-    .insert({
-      turma_id: turmaId,
-      data: dataHojeApp(),
-      horario: horaAgoraApp(),
-      professor,
-    })
-    .select()
-    .single();
+export async function criarChamada({ horarioId }) {
+  const { data, error } = await supabase.rpc("abrir_chamada_grade", {
+    p_horario_id: Number(horarioId),
+  });
 
   if (error) throw error;
 
-  return data;
+  const registro = Array.isArray(data) ? data[0] : data;
+  if (!registro?.chamada_id) {
+    throw new Error("Não foi possível abrir a chamada.");
+  }
+
+  return { id: registro.chamada_id, ...registro };
 }
 
 export async function abrirAulaExtra({ nome, localId, horario }) {

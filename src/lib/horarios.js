@@ -1,6 +1,6 @@
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-function horaCurta(valor) {
+export function horaCurta(valor) {
   return String(valor || "").slice(0, 5);
 }
 
@@ -37,6 +37,38 @@ export function agruparHorarios(horarios = []) {
       " · " +
       grupo.horarios.join(" / "),
   }));
+}
+
+export function agruparSlots(horarios = [], { separarProfessor = true } = {}) {
+  const grupos = new Map();
+
+  for (const item of horarios) {
+    const hora = horaCurta(item.horario_inicio);
+    const professor = item.professor || "";
+    const assinatura = separarProfessor ? `${hora}|${professor}` : hora;
+    const atual = grupos.get(assinatura) || {
+      id: assinatura,
+      horario: hora,
+      professor,
+      dias: [],
+      horarioIds: [],
+    };
+
+    atual.dias.push(Number(item.dia_semana));
+    atual.horarioIds.push(item.id);
+    grupos.set(assinatura, atual);
+  }
+
+  return [...grupos.values()]
+    .map((grupo) => ({
+      ...grupo,
+      dias: [...new Set(grupo.dias)].sort((a, b) => a - b),
+      texto: `${[...new Set(grupo.dias)]
+        .sort((a, b) => a - b)
+        .map((dia) => DIAS[dia])
+        .join(" • ")} · ${grupo.horario}`,
+    }))
+    .sort((a, b) => a.horario.localeCompare(b.horario));
 }
 
 export function resumoHorarios(horarios = []) {

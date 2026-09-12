@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, UsersRound, X } from "lucide-react";
 import { buscarAlunosDaTurma } from "@/services/alunos";
 import {
@@ -11,17 +11,19 @@ import {
 import { registrarPresencas } from "@/services/presencas";
 import { listarLocais } from "@/services/locais";
 import { useToast } from "@/contexts/ToastContext";
-import { horaAgoraApp } from "@/lib/dataHora";
+import { diaSemanaApp, horaAgoraApp } from "@/lib/dataHora";
+import { horaCurta } from "@/lib/horarios";
+import { useAuth } from "@/contexts/AuthContext";
+import { ehAdministrador } from "@/lib/permissoes";
 
-export default function PainelChamada({
-  turmas,
-  onChamadaRegistrada,
-}) {
+export default function PainelChamada({ turmas, onChamadaRegistrada }) {
   const { mostrarToast } = useToast();
+  const { usuario } = useAuth();
+  const admin = ehAdministrador(usuario);
 
   const [modoChamada, setModoChamada] = useState(false);
   const [tipo, setTipo] = useState("turma");
-  const [turmaSelecionada, setTurmaSelecionada] = useState("");
+  const [horarioSelecionado, setHorarioSelecionado] = useState("");
   const [alunosChamada, setAlunosChamada] = useState([]);
   const [presentes, setPresentes] = useState([]);
   const [carregando, setCarregando] = useState(false);
@@ -39,12 +41,38 @@ export default function PainelChamada({
       .catch((error) => console.error("Erro ao carregar locais:", error));
   }, []);
 
+  const aulasHoje = useMemo(() => {
+    const dia = diaSemanaApp();
+
+    return turmas
+      .flatMap((turma) =>
+        (turma.turma_horarios || [])
+          .filter((horario) => Number(horario.dia_semana) === dia)
+          .filter(
+            (horario) =>
+              admin ||
+              (horario.turma_horario_professores || []).length > 0
+          )
+          .map((horario) => ({
+            ...horario,
+            turma,
+          }))
+      )
+      .sort((a, b) =>
+        String(a.horario_inicio).localeCompare(String(b.horario_inicio))
+      );
+  }, [admin, turmas]);
+
+  const aulaSelecionada = aulasHoje.find(
+    (item) => String(item.id) === String(horarioSelecionado)
+  );
+
   async function abrirChamadaTurma() {
-    if (!turmaSelecionada) return;
+    if (!aulaSelecionada) return;
 
     try {
       setCarregando(true);
-      const alunos = await buscarAlunosDaTurma(Number(turmaSelecionada));
+      const alunos = await buscarAlunosDaTurma(aulaSelecionada.turma.id);
       setAlunosChamada(alunos);
       setPresentes([]);
       setExtraAberta(null);
@@ -65,10 +93,8 @@ export default function PainelChamada({
 
     try {
       setCarregando(true);
-
       const alunos = await listarAlunosAulaExtra();
       const criada = await abrirAulaExtra(extra);
-
       setAlunosChamada(alunos);
       setPresentes([]);
       setExtraAberta(criada);
@@ -90,20 +116,18 @@ export default function PainelChamada({
   }
 
   function togglePresenca(aluno) {
-    const existe = presentes.some((p) => p.id === aluno.id);
-
-    if (existe) {
-      setPresentes((prev) => prev.filter((p) => p.id !== aluno.id));
-    } else {
-      setPresentes((prev) => [...prev, aluno]);
-    }
+    setPresentes((atuais) =>
+      atuais.some((item) => item.id === aluno.id)
+        ? atuais.filter((item) => item.id !== aluno.id)
+        : [...atuais, aluno]
+    );
   }
 
   function limpar() {
     setModoChamada(false);
     setPresentes([]);
     setAlunosChamada([]);
-    setTurmaSelecionada("");
+    setHorarioSelecionado("");
     setExtraAberta(null);
     setExtra((atual) => ({ ...atual, nome: "" }));
   }
@@ -118,7 +142,6 @@ export default function PainelChamada({
       limpar();
       onChamadaRegistrada?.();
     } catch (error) {
-      console.error(error);
       mostrarToast(error.message || "Não foi possível cancelar a aula extra.", "error");
     } finally {
       setCarregando(false);
@@ -129,29 +152,16 @@ export default function PainelChamada({
     try {
       setCarregando(true);
 
+      let chamadaId;
+
       if (tipo === "extra") {
-        if (!extraAberta?.chamada_id) {
-          throw new Error("Aula extra não encontrada.");
-        }
-
-        await salvarPresencasAulaExtra(extraAberta.chamada_id, presentes);
+        if (!extraAberta?.chamada_id) throw new Error("Aula extra não encontrada.");
+        chamadaId = extraAberta.chamada_id;
+        await salvarPresencasAulaExtra(chamadaId, presentes);
       } else {
-        const turma = turmas.find((t) => t.id === Number(turmaSelecionada));
-
-        if (!turma) {
-          mostrarToast("Turma não encontrada.", "error");
-          return;
-        }
-
-        const professores = (turma.turma_professores || [])
-          .map((item) => item.usuarios?.nome)
-          .filter(Boolean);
-
-        const { id: chamadaId } = await criarChamada({
-          turmaId: turma.id,
-          professor: professores.join(", ") || "Professor indisponível ainda",
-        });
-
+        if (!aulaSelecionada) throw new Error("Horário não encontrado.");
+        const chamada = await criarChamada({ horarioId: aulaSelecionada.id });
+        chamadaId = chamada.id;
         await registrarPresencas(chamadaId, presentes);
       }
 
@@ -166,76 +176,86 @@ export default function PainelChamada({
     }
   }
 
-  const turmaAtual = turmas.find(
-    (t) => String(t.id) === String(turmaSelecionada)
-  );
-
   const tituloAtual =
     tipo === "extra"
       ? extra.nome.trim() || "Aula extra"
-      : turmaAtual?.nome || "Chamada";
+      : aulaSelecionada?.turma?.nome || "Chamada";
 
   return (
     <>
-      {!modoChamada && (
+      {!modoChamada ? (
         <div className="mb-5 rounded-3xl border border-white/10 bg-[#111111] p-5">
           <div className="mb-5">
-            <p className="text-sm font-semibold uppercase tracking-wider text-red-500">
-              Aula
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-wider text-red-500">Aula</p>
             <h2 className="mt-1 text-3xl font-bold">Iniciar chamada</h2>
             <p className="mt-2 text-gray-400">
-              Use uma turma da grade ou abra uma aula extra para toda a academia.
+              Abra uma aula da grade de hoje ou uma aula extra para toda a academia.
             </p>
           </div>
 
           <div className="mb-4 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setTipo("turma")}
-              className={
-                tipo === "turma"
-                  ? "min-h-11 rounded-2xl bg-red-700 px-3 text-sm font-semibold"
-                  : "min-h-11 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-400"
-              }
-            >
-              Turma da grade
-            </button>
-            <button
-              type="button"
-              onClick={() => setTipo("extra")}
-              className={
-                tipo === "extra"
-                  ? "min-h-11 rounded-2xl bg-red-700 px-3 text-sm font-semibold"
-                  : "min-h-11 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-400"
-              }
-            >
-              Aula extra
-            </button>
+            {[
+              ["turma", "Grade de hoje"],
+              ["extra", "Aula extra"],
+            ].map(([valor, rotulo]) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => setTipo(valor)}
+                className={
+                  tipo === valor
+                    ? "min-h-11 rounded-2xl bg-red-700 px-3 text-sm font-semibold"
+                    : "min-h-11 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-400"
+                }
+              >
+                {rotulo}
+              </button>
+            ))}
           </div>
 
           {tipo === "turma" ? (
             <div className="space-y-3">
-              <select
-                value={turmaSelecionada}
-                onChange={(event) => setTurmaSelecionada(event.target.value)}
-                className="h-14 w-full rounded-2xl bg-[#1A1A1A] px-4 text-lg"
-              >
-                <option value="">Selecionar turma</option>
-                {turmas.map((turma) => (
-                  <option key={turma.id} value={turma.id}>
-                    {turma.nome}
-                  </option>
-                ))}
-              </select>
+              {aulasHoje.length ? (
+                <>
+                  <select
+                    value={horarioSelecionado}
+                    onChange={(event) => setHorarioSelecionado(event.target.value)}
+                    className="h-14 w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 text-base"
+                  >
+                    <option value="">Selecionar aula de hoje</option>
+                    {aulasHoje.map((aula) => (
+                      <option key={aula.id} value={aula.id}>
+                        {aula.turma.nome} · {horaCurta(aula.horario_inicio)}
+                        {aula.professor ? ` · ${aula.professor}` : ""}
+                      </option>
+                    ))}
+                  </select>
 
-              <button
-                onClick={abrirChamadaTurma}
-                disabled={!turmaSelecionada || carregando}
-                className="h-14 w-full rounded-2xl bg-red-700 text-lg font-bold transition hover:bg-red-600 disabled:opacity-40"
-              >
-                {carregando ? "Carregando..." : "Iniciar chamada"}
-              </button>
+                  {aulaSelecionada ? (
+                    <div className="rounded-2xl bg-black/25 p-3 text-sm text-zinc-400">
+                      <p className="font-semibold text-zinc-200">
+                        {aulaSelecionada.turma.nome}
+                      </p>
+                      <p className="mt-1">
+                        {horaCurta(aulaSelecionada.horario_inicio)} ·{" "}
+                        {aulaSelecionada.professor || "Professor indisponível ainda"}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <button
+                    onClick={abrirChamadaTurma}
+                    disabled={!horarioSelecionado || carregando}
+                    className="h-14 w-full rounded-2xl bg-red-700 text-lg font-bold disabled:opacity-40"
+                  >
+                    {carregando ? "Carregando..." : "Iniciar chamada"}
+                  </button>
+                </>
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-500">
+                  Não há aulas da sua grade disponíveis hoje.
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -243,22 +263,18 @@ export default function PainelChamada({
                 <div className="flex gap-3">
                   <UsersRound size={20} className="mt-0.5 shrink-0 text-red-500" />
                   <p className="text-sm leading-6 text-zinc-400">
-                    A aula extra fica disponível para todos os alunos ativos e envia uma notificação para quem estiver com o push ativado.
+                    Disponível para todos os alunos ativos e com notificação push.
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-zinc-400">
-                  Nome da aula <span className="text-zinc-600">(opcional)</span>
-                </label>
+                <label className="mb-2 block text-sm text-zinc-400">Nome da aula <span className="text-zinc-500">(opcional)</span></label>
                 <input
                   value={extra.nome}
-                  onChange={(event) =>
-                    setExtra((atual) => ({ ...atual, nome: event.target.value }))
-                  }
+                  onChange={(event) => setExtra((atual) => ({ ...atual, nome: event.target.value }))}
                   placeholder="Ex.: Open mat, treino de domingo"
-                  className="h-12 min-w-0 w-full max-w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 outline-none focus:border-red-700"
+                  className="h-12 w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 outline-none"
                 />
               </div>
 
@@ -266,16 +282,12 @@ export default function PainelChamada({
                 <label className="mb-2 block text-sm text-zinc-400">Local</label>
                 <select
                   value={extra.localId}
-                  onChange={(event) =>
-                    setExtra((atual) => ({ ...atual, localId: event.target.value }))
-                  }
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 outline-none focus:border-red-700"
+                  onChange={(event) => setExtra((atual) => ({ ...atual, localId: event.target.value }))}
+                  className="h-12 w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4"
                 >
                   <option value="">Selecionar local</option>
                   {locais.map((local) => (
-                    <option key={local.id} value={local.id}>
-                      {local.nome}
-                    </option>
+                    <option key={local.id} value={local.id}>{local.nome}</option>
                   ))}
                 </select>
               </div>
@@ -285,10 +297,8 @@ export default function PainelChamada({
                 <input
                   type="time"
                   value={extra.horario}
-                  onChange={(event) =>
-                    setExtra((atual) => ({ ...atual, horario: event.target.value }))
-                  }
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 outline-none focus:border-red-700"
+                  onChange={(event) => setExtra((atual) => ({ ...atual, horario: event.target.value }))}
+                  className="h-12 min-w-0 w-full max-w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4"
                 />
               </div>
 
@@ -296,7 +306,7 @@ export default function PainelChamada({
                 type="button"
                 onClick={abrirExtra}
                 disabled={!extra.localId || !extra.horario || carregando}
-                className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-red-700 text-lg font-bold transition hover:bg-red-600 disabled:opacity-40"
+                className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-red-700 text-lg font-bold disabled:opacity-40"
               >
                 <Plus size={20} />
                 {carregando ? "Abrindo..." : "Abrir aula extra"}
@@ -304,17 +314,17 @@ export default function PainelChamada({
             </div>
           )}
         </div>
-      )}
-
-      {modoChamada && (
+      ) : (
         <div className="mb-5 rounded-3xl border border-white/10 bg-[#111111] p-4">
           <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               {tipo === "extra" ? (
+                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-red-500">Aula extra</p>
+              ) : (
                 <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-red-500">
-                  Aula extra
+                  {horaCurta(aulaSelecionada?.horario_inicio)}
                 </p>
-              ) : null}
+              )}
               <h2 className="text-2xl font-bold">{tituloAtual}</h2>
               <p className="text-gray-400">{presentes.length} presença(s)</p>
             </div>
@@ -325,40 +335,37 @@ export default function PainelChamada({
                   type="button"
                   onClick={cancelarExtra}
                   disabled={carregando}
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-red-900/50 bg-red-950/30 px-4 text-sm font-semibold text-red-300 disabled:opacity-50"
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-red-900/50 bg-red-950/30 px-4 text-sm font-semibold text-red-300"
                 >
-                  <X size={16} />
-                  Cancelar
+                  <X size={16} /> Cancelar
                 </button>
               ) : null}
               <button
                 onClick={confirmarChamada}
                 disabled={carregando}
-                className="h-11 rounded-xl bg-green-700 px-5 font-semibold hover:bg-green-600 disabled:opacity-50"
+                className="h-11 rounded-xl bg-green-700 px-5 font-semibold disabled:opacity-50"
               >
                 {carregando ? "Salvando..." : "Confirmar chamada"}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {alunosChamada.map((aluno) => {
-              const presente = presentes.some((p) => p.id === aluno.id);
-
+              const presente = presentes.some((item) => item.id === aluno.id);
               return (
                 <button
                   key={aluno.id}
                   onClick={() => togglePresenca(aluno)}
                   className={
                     presente
-                      ? "rounded-2xl bg-green-700 p-4 text-left text-white transition"
-                      : "rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 text-left transition"
+                      ? "rounded-2xl bg-green-700 p-4 text-left text-white"
+                      : "rounded-2xl border border-white/10 bg-[#1A1A1A] p-4 text-left"
                   }
                 >
-                  <h3 className="mb-2 text-lg font-bold">{aluno.nome}</h3>
-                  <p className="text-sm opacity-80">
-                    Faixa {aluno.faixa}
-                    {aluno.graus > 0 && ` • ${aluno.graus}º grau`}
+                  <h3 className="font-bold">{aluno.nome}</h3>
+                  <p className="mt-1 text-sm opacity-80">
+                    Faixa {aluno.faixa}{aluno.graus > 0 ? ` · ${aluno.graus}º grau` : ""}
                   </p>
                 </button>
               );

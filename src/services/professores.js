@@ -9,7 +9,7 @@ export async function listarProfessores() {
       email,
       status,
       cargo,
-      turma_professores(turma_id)
+      turma_horario_professores(horario_id)
     `)
     .eq("cargo", "Professor")
     .order("nome");
@@ -40,10 +40,10 @@ export async function criarProfessor({ nome, email }) {
   return data;
 }
 
-export async function definirTurmasProfessor(usuarioId, turmaIds) {
-  const { error } = await supabase.rpc("definir_turmas_professor", {
+export async function definirHorariosProfessor(usuarioId, horarioIds) {
+  const { error } = await supabase.rpc("definir_horarios_professor", {
     p_usuario_id: usuarioId,
-    p_turma_ids: turmaIds,
+    p_horario_ids: horarioIds,
   });
 
   if (error) throw error;
