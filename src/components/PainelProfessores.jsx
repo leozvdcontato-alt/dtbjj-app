@@ -78,9 +78,22 @@ export default function PainelProfessores({ onAtualizado }) {
   }
 
   useEffect(() => {
-    carregar().catch((error) =>
-      console.error("Erro ao carregar professores:", error)
-    );
+    let ativo = true;
+
+    Promise.all([listarProfessores(), listarTurmas()])
+      .then(([listaProfessores, listaTurmas]) => {
+        if (!ativo) return;
+        setProfessores(listaProfessores);
+        setTurmas(listaTurmas);
+        setSelecoes(montarSelecoes(listaProfessores, listaTurmas));
+      })
+      .catch((error) =>
+        console.error("Erro ao carregar professores:", error)
+      );
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   async function criarAcesso(event) {
