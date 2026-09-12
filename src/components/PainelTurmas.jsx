@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronRight, Copy, MapPin, MessageCircle, UserRound } from "lucide-react";
 import { listarTurmas } from "@/services/turmas";
 import { useToast } from "@/contexts/ToastContext";
-import { agruparHorarios } from "@/lib/horarios";
+import { agruparSlots } from "@/lib/horarios";
 const APP_URL = "https://dtbjj-app.vercel.app";
 
 function mensagemConvite(turma) {
@@ -67,9 +67,6 @@ export default function PainelTurmas({ setTela }) {
 
       <div className="space-y-3">
         {turmas.map((turma) => {
-          const professores = (turma.turma_professores || [])
-            .map((item) => item.usuarios?.nome)
-            .filter(Boolean);
 
           return (
             <article
@@ -85,8 +82,14 @@ export default function PainelTurmas({ setTela }) {
                   <h3 className="truncate text-lg font-bold">{turma.nome}</h3>
                   {turma.turma_horarios?.length ? (
                     <div className="mt-1 space-y-1 text-sm text-zinc-500">
-                      {agruparHorarios(turma.turma_horarios).map((grupo) => (
-                        <p key={grupo.texto}>{grupo.texto}</p>
+                      {agruparSlots(turma.turma_horarios).map((grupo) => (
+                        <div key={grupo.id} className="rounded-xl bg-black/20 p-2.5">
+                          <p>{grupo.texto}</p>
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-zinc-500">
+                            <UserRound size={13} />
+                            {grupo.professor || "Professor indisponível ainda"}
+                          </p>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -95,12 +98,6 @@ export default function PainelTurmas({ setTela }) {
                         "Horário ainda não estruturado"}
                     </p>
                   )}
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-600">
-                    <UserRound size={14} />
-                    {professores.length
-                      ? professores.join(", ")
-                      : "Professor indisponível ainda"}
-                  </p>
                   {turma.locais?.nome ? (
                     <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-600">
                       <MapPin size={14} />

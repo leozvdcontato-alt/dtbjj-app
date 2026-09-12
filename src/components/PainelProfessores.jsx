@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Copy,
   MessageCircle,
@@ -11,11 +11,24 @@ import EmptyState from "./ui/EmptyState";
 import MultiSelect from "./ui/MultiSelect";
 import {
   criarProfessor,
-  definirTurmasProfessor,
+  definirHorariosProfessor,
   listarProfessores,
 } from "@/services/professores";
 import { listarTurmas } from "@/services/turmas";
+import { agruparSlots } from "@/lib/horarios";
 import { useToast } from "@/contexts/ToastContext";
+
+function montarOpcoes(turmas) {
+  return turmas.flatMap((turma) =>
+    agruparSlots(turma.turma_horarios || [], { separarProfessor: false }).map(
+      (grupo) => ({
+        id: `${turma.id}:${grupo.horario}`,
+        nome: `${turma.nome} · ${grupo.texto}`,
+        horarioIds: grupo.horarioIds,
+      })
+    )
+  );
+}
 
 export default function PainelProfessores({ onAtualizado }) {
   const [professores, setProfessores] = useState([]);
@@ -23,10 +36,35 @@ export default function PainelProfessores({ onAtualizado }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [salvandoTurmas, setSalvandoTurmas] = useState("");
+  const [salvando, setSalvando] = useState("");
   const [selecoes, setSelecoes] = useState({});
   const [conviteCriado, setConviteCriado] = useState(null);
   const { mostrarToast } = useToast();
+
+  const opcoes = useMemo(() => montarOpcoes(turmas), [turmas]);
+
+  function montarSelecoes(listaProfessores, listaTurmas) {
+    const grade = montarOpcoes(listaTurmas);
+
+    return Object.fromEntries(
+      listaProfessores.map((professor) => {
+        const ids = new Set(
+          (professor.turma_horario_professores || []).map(
+            (item) => item.horario_id
+          )
+        );
+
+        return [
+          professor.id,
+          grade
+            .filter((opcao) =>
+              opcao.horarioIds.every((horarioId) => ids.has(horarioId))
+            )
+            .map((opcao) => opcao.id),
+        ];
+      })
+    );
+  }
 
   async function carregar() {
     const [listaProfessores, listaTurmas] = await Promise.all([
@@ -36,14 +74,7 @@ export default function PainelProfessores({ onAtualizado }) {
 
     setProfessores(listaProfessores);
     setTurmas(listaTurmas);
-    setSelecoes(
-      Object.fromEntries(
-        listaProfessores.map((professor) => [
-          professor.id,
-          (professor.turma_professores || []).map((item) => item.turma_id),
-        ])
-      )
-    );
+    setSelecoes(montarSelecoes(listaProfessores, listaTurmas));
   }
 
   useEffect(() => {
@@ -54,16 +85,11 @@ export default function PainelProfessores({ onAtualizado }) {
         if (!ativo) return;
         setProfessores(listaProfessores);
         setTurmas(listaTurmas);
-        setSelecoes(
-          Object.fromEntries(
-            listaProfessores.map((professor) => [
-              professor.id,
-              (professor.turma_professores || []).map((item) => item.turma_id),
-            ])
-          )
-        );
+        setSelecoes(montarSelecoes(listaProfessores, listaTurmas));
       })
-      .catch((error) => console.error("Erro ao carregar professores:", error));
+      .catch((error) =>
+        console.error("Erro ao carregar professores:", error)
+      );
 
     return () => {
       ativo = false;
@@ -82,14 +108,15 @@ export default function PainelProfessores({ onAtualizado }) {
     setConviteCriado(null);
 
     try {
+      const nomeProfessor = nome.trim();
       const convite = await criarProfessor({
-        nome: nome.trim(),
+        nome: nomeProfessor,
         email: email.trim(),
       });
 
       setNome("");
       setEmail("");
-      setConviteCriado({ ...convite, nome: nome.trim() });
+      setConviteCriado({ ...convite, nome: nomeProfessor });
       await carregar();
       mostrarToast("Convite do professor preparado.", "success");
     } catch (error) {
@@ -102,19 +129,24 @@ export default function PainelProfessores({ onAtualizado }) {
     }
   }
 
-  async function salvarTurmas(professorId) {
-    setSalvandoTurmas(professorId);
+  async function salvarHorarios(professorId) {
+    setSalvando(professorId);
 
     try {
-      await definirTurmasProfessor(professorId, selecoes[professorId] || []);
+      const selecionadas = new Set(selecoes[professorId] || []);
+      const horarioIds = opcoes
+        .filter((opcao) => selecionadas.has(opcao.id))
+        .flatMap((opcao) => opcao.horarioIds);
+
+      await definirHorariosProfessor(professorId, horarioIds);
       await carregar();
       await onAtualizado?.();
-      mostrarToast("Turmas do professor atualizadas.", "success");
+      mostrarToast("Horários do professor atualizados.", "success");
     } catch (error) {
-      console.error("Erro ao salvar turmas do professor:", error);
-      mostrarToast("Não foi possível atualizar as turmas.", "error");
+      console.error("Erro ao salvar horários do professor:", error);
+      mostrarToast("Não foi possível atualizar os horários.", "error");
     } finally {
-      setSalvandoTurmas("");
+      setSalvando("");
     }
   }
 
@@ -158,7 +190,7 @@ export default function PainelProfessores({ onAtualizado }) {
     <section className="space-y-5">
       <PageHeader
         title="Professores"
-        subtitle="Crie o convite e defina em quais turmas cada professor atua."
+        subtitle="Crie o convite e defina os horários em que cada professor atua."
       />
 
       <form
@@ -205,18 +237,15 @@ export default function PainelProfessores({ onAtualizado }) {
             <h3 className="font-semibold">Convite seguro pronto</h3>
           </div>
 
-          <p className="mt-3 text-sm text-zinc-300">
-            {conviteCriado.email}
-          </p>
+          <p className="mt-3 text-sm text-zinc-300">{conviteCriado.email}</p>
           <p className="mt-2 text-xs leading-5 text-zinc-500">
-            O professor já foi criado. Envie o convite para ele definir a
-            própria senha e acessar o DTBJJ APP.
+            Envie o convite para o professor definir a própria senha.
           </p>
 
           <button
             type="button"
             onClick={enviarWhatsApp}
-            className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600"
+            className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 text-sm font-semibold text-white"
           >
             <MessageCircle size={18} />
             Enviar convite no WhatsApp
@@ -250,11 +279,11 @@ export default function PainelProfessores({ onAtualizado }) {
               <p className="mt-1 text-sm text-zinc-500">{professor.email}</p>
 
               <div className="mt-4">
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-600">
-                  Turmas do professor
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                  Horários do professor
                 </label>
                 <MultiSelect
-                  options={turmas}
+                  options={opcoes}
                   value={selecoes[professor.id] || []}
                   onChange={(valor) =>
                     setSelecoes((atual) => ({
@@ -262,17 +291,17 @@ export default function PainelProfessores({ onAtualizado }) {
                       [professor.id]: valor,
                     }))
                   }
-                  placeholder="Selecione as turmas"
+                  placeholder="Selecione os horários"
                 />
                 <button
                   type="button"
-                  onClick={() => salvarTurmas(professor.id)}
-                  disabled={salvandoTurmas === professor.id}
-                  className="mt-3 h-10 w-full rounded-2xl bg-white/10 text-sm font-semibold text-zinc-200 disabled:opacity-50"
+                  onClick={() => salvarHorarios(professor.id)}
+                  disabled={salvando === professor.id}
+                  className="mt-3 h-11 w-full rounded-2xl bg-white/10 text-sm font-semibold text-zinc-200 disabled:opacity-50"
                 >
-                  {salvandoTurmas === professor.id
+                  {salvando === professor.id
                     ? "Salvando..."
-                    : "Salvar turmas"}
+                    : "Salvar horários"}
                 </button>
               </div>
             </article>

@@ -35,7 +35,8 @@ export async function carregarPortalAluno(alunoId) {
             turma_horarios (
               id,
               dia_semana,
-              horario_inicio
+              horario_inicio,
+              professor
             )
           )
         `)
