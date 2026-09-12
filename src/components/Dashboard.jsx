@@ -13,17 +13,20 @@ import PainelTurmas from "./PainelTurmas";
 import PainelChamada from "./PainelChamada";
 import PainelProfessores from "./PainelProfessores";
 import PainelLocais from "./PainelLocais";
+import PainelPublicacoes from "./PainelPublicacoes";
 import BottomNavigation from "./navigation/BottomNavigation";
 import AlunoInicio from "./aluno/AlunoInicio";
 import AlunoTurmas from "./aluno/AlunoTurmas";
 import AlunoFrequencia from "./aluno/AlunoFrequencia";
 import AlunoCheckin from "./aluno/AlunoCheckin";
+import AlunoPublicacoes from "./aluno/AlunoPublicacoes";
 
 const PAGINAS_ALUNO = new Set([
   "home",
   "turmas",
   "checkin",
   "frequencia",
+  "comunicados",
   "mais",
   "perfil",
 ]);
@@ -35,6 +38,7 @@ const PAGINAS_GESTAO = new Set([
   "turmas",
   "turma",
   "locais",
+  "publicacoes",
   "mais",
   "perfil",
 ]);
@@ -45,13 +49,18 @@ export default function Dashboard() {
   const { usuario } = useAuth();
   const aluno = ehAluno(usuario);
   const admin = ehAdministrador(usuario);
-  const tokenCheckin =
-    new URLSearchParams(window.location.search).get("checkin") || "";
+  const paramsUrl = new URLSearchParams(window.location.search);
+  const tokenCheckin = paramsUrl.get("checkin") || "";
+  const publicacaoInicialId = paramsUrl.get("publicacao") || "";
 
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [tela, setTela] = useState({
-    pagina: aluno && tokenCheckin ? "checkin" : "home",
+    pagina: aluno && tokenCheckin
+      ? "checkin"
+      : aluno && publicacaoInicialId
+        ? "comunicados"
+        : "home",
     turma: null,
   });
 
@@ -87,6 +96,12 @@ export default function Dashboard() {
       ativo = false;
     };
   }, [aluno]);
+
+  function limparPublicacaoUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("publicacao");
+    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  }
 
   function limparTokenCheckin() {
     const url = new URL(window.location.href);
@@ -146,10 +161,17 @@ export default function Dashboard() {
               <AlunoCheckin
                 tokenInicial={tokenCheckin}
                 onTokenConsumido={limparTokenCheckin}
+                onFechar={() => setTela({ pagina: "home", turma: null })}
               />
             )}
             {paginaAtual === "frequencia" && (
               <AlunoFrequencia portal={portalAluno} />
+            )}
+            {paginaAtual === "comunicados" && (
+              <AlunoPublicacoes
+                publicacaoInicialId={publicacaoInicialId}
+                onPublicacaoConsumida={limparPublicacaoUrl}
+              />
             )}
           </>
         ) : (
@@ -165,6 +187,7 @@ export default function Dashboard() {
             )}
             {paginaAtual === "professores" && admin && <PainelProfessores />}
             {paginaAtual === "locais" && <PainelLocais />}
+            {paginaAtual === "publicacoes" && <PainelPublicacoes />}
           </>
         )}
 

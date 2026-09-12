@@ -2,6 +2,7 @@ import {
   ChevronRight,
   LogOut,
   MapPin,
+  Newspaper,
   ShieldCheck,
   User,
   UsersRound,
@@ -65,6 +66,20 @@ export default function PainelMais({ setTela }) {
           <div className="flex items-center gap-3">
             <UsersRound size={21} className="text-zinc-400" />
             <span className="font-medium">Professores</span>
+          </div>
+          <ChevronRight size={18} className="text-zinc-600" />
+        </button>
+      ) : null}
+
+      {gestao ? (
+        <button
+          type="button"
+          onClick={() => setTela({ pagina: "publicacoes", turma: null })}
+          className={itemClass}
+        >
+          <div className="flex items-center gap-3">
+            <Newspaper size={21} className="text-zinc-400" />
+            <span className="font-medium">Notícias e eventos</span>
           </div>
           <ChevronRight size={18} className="text-zinc-600" />
         </button>
