@@ -1,5 +1,16 @@
-import { CalendarCheck2, GraduationCap, Medal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Bell,
+  CalendarCheck2,
+  CalendarDays,
+  GraduationCap,
+  Newspaper,
+} from "lucide-react";
 import Faixa from "../Faixa";
+import PublicacaoModal from "../PublicacaoModal";
+import { listarPublicacoes } from "@/services/publicacoes";
+import { ativarPush, pushDisponivel, statusPush } from "@/services/push";
+import { useAuth } from "@/contexts/AuthContext";
 
 function normalizarFaixa(faixa) {
   const mapa = {
@@ -25,11 +36,70 @@ function normalizarFaixa(faixa) {
   return mapa[faixa] || "branca";
 }
 
+function ordenarDestaques(itens) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const futuros = itens
+    .filter((item) => item.tipo === "evento" && item.evento_data >= hoje)
+    .sort((a, b) => String(a.evento_data).localeCompare(String(b.evento_data)));
+  const noticias = itens
+    .filter((item) => item.tipo === "noticia")
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const passados = itens
+    .filter((item) => item.tipo === "evento" && item.evento_data < hoje)
+    .sort((a, b) => String(b.evento_data).localeCompare(String(a.evento_data)));
+
+  return [...futuros, ...noticias, ...passados];
+}
+
 export default function AlunoInicio({ portal, setTela }) {
+  const { usuario } = useAuth();
   const { aluno, turmas, presencas, loading, erro } = portal;
+  const [publicacoes, setPublicacoes] = useState([]);
+  const [selecionada, setSelecionada] = useState(null);
+  const [push, setPush] = useState("carregando");
+  const [ativandoPush, setAtivandoPush] = useState(false);
+  const [erroPush, setErroPush] = useState("");
+
+  useEffect(() => {
+    listarPublicacoes()
+      .then((dados) => setPublicacoes(dados.filter((item) => item.publicado)))
+      .catch((error) => console.error("Erro ao carregar publicações:", error));
+
+    if (!pushDisponivel()) {
+      setPush("indisponivel");
+      return;
+    }
+
+    statusPush(usuario?.id)
+      .then(setPush)
+      .catch(() => setPush("inativo"));
+  }, [usuario?.id]);
+
+  const destaques = useMemo(
+    () => ordenarDestaques(publicacoes).slice(0, 3),
+    [publicacoes]
+  );
+
+  async function habilitarPush() {
+    setAtivandoPush(true);
+    setErroPush("");
+    try {
+      await ativarPush(usuario.id);
+      setPush("ativo");
+    } catch (error) {
+      setErroPush(error.message || "Não foi possível ativar as notificações.");
+      setPush(Notification?.permission === "denied" ? "negado" : "inativo");
+    } finally {
+      setAtivandoPush(false);
+    }
+  }
 
   if (loading) {
-    return <div className="py-16 text-center text-sm text-zinc-500">Carregando sua área...</div>;
+    return (
+      <div className="py-16 text-center text-sm text-zinc-500">
+        Carregando sua área...
+      </div>
+    );
   }
 
   if (erro) {
@@ -49,7 +119,9 @@ export default function AlunoInicio({ portal, setTela }) {
 
         <div className="mt-4 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">{aluno?.nome || "Aluno DTBJJ"}</h2>
+            <h2 className="text-2xl font-bold text-white">
+              {aluno?.nome || "Aluno DTBJJ"}
+            </h2>
             <p className="mt-1 text-sm text-zinc-400">
               {aluno?.categoria || "Aluno"} · {aluno?.status || "Ativo"}
             </p>
@@ -84,32 +156,92 @@ export default function AlunoInicio({ portal, setTela }) {
         </button>
       </section>
 
+      {push === "inativo" ? (
+        <section className="rounded-3xl border border-red-900/30 bg-red-950/15 p-4">
+          <div className="flex items-start gap-3">
+            <Bell size={20} className="mt-0.5 shrink-0 text-red-500" />
+            <div className="flex-1">
+              <h3 className="font-semibold">Receba avisos da sua turma</h3>
+              <p className="mt-1 text-sm leading-6 text-zinc-500">
+                Ative as notificações para receber novas notícias e eventos.
+              </p>
+              {erroPush ? (
+                <p className="mt-2 text-xs text-amber-400">{erroPush}</p>
+              ) : null}
+              <button
+                type="button"
+                onClick={habilitarPush}
+                disabled={ativandoPush}
+                className="mt-3 rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {ativandoPush ? "Ativando..." : "Ativar notificações"}
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-950/50 text-red-400">
-            <Medal size={20} />
-          </div>
-          <div>
-            <h3 className="font-semibold">Graduação atual</h3>
-            <p className="text-sm text-zinc-500">
-              {aluno?.faixa || "Faixa não informada"} · {aluno?.graus || 0} grau{aluno?.graus === 1 ? "" : "s"}
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-semibold">Notícias e eventos</h3>
+          <button
+            type="button"
+            onClick={() => setTela({ pagina: "comunicados", turma: null })}
+            className="text-xs font-semibold text-red-500"
+          >
+            Ver todas
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {destaques.length ? (
+            destaques.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelecionada(item)}
+                className="flex w-full items-start gap-3 rounded-2xl bg-black/25 p-3 text-left transition active:bg-black/40"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-950/50 text-red-400">
+                  {item.tipo === "evento" ? (
+                    <CalendarDays size={17} />
+                  ) : (
+                    <Newspaper size={17} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-red-500">
+                    {item.tipo === "evento" ? "Evento" : "Notícia"}
+                    {item.evento_data
+                      ? " · " +
+                        new Date(
+                          item.evento_data + "T12:00:00"
+                        ).toLocaleDateString("pt-BR")
+                      : ""}
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-zinc-200">
+                    {item.titulo}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-zinc-600">
+                    {item.conteudo}
+                  </p>
+                </div>
+              </button>
+            ))
+          ) : (
+            <p className="py-3 text-sm text-zinc-600">
+              Nenhuma notícia ou evento publicado para suas turmas.
             </p>
-          </div>
+          )}
         </div>
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
-        <h3 className="font-semibold">Próximo passo</h3>
-        {turmas.length === 0 ? (
-          <p className="mt-2 text-sm leading-6 text-zinc-500">
-            Você ainda não está vinculado a uma turma. A academia poderá fazer essa matrícula para você.
-          </p>
-        ) : (
-          <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Acompanhe suas turmas e o histórico de presença pelo menu abaixo.
-          </p>
-        )}
-      </section>
+      {selecionada ? (
+        <PublicacaoModal
+          publicacao={selecionada}
+          onClose={() => setSelecionada(null)}
+        />
+      ) : null}
     </div>
   );
 }
