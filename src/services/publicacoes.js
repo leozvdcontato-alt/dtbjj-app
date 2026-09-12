@@ -13,6 +13,7 @@ const SELECT_PUBLICACAO = `
   id,
   academia_id,
   autor_usuario_id,
+  autor_nome,
   tipo,
   titulo,
   conteudo,
@@ -23,7 +24,6 @@ const SELECT_PUBLICACAO = `
   push_enviado_at,
   created_at,
   updated_at,
-  autor:usuarios!publicacoes_autor_usuario_id_fkey(id,nome),
   publicacao_turmas(
     turma_id,
     turmas(id,nome)
@@ -101,7 +101,7 @@ export async function listarComentarios(publicacaoId) {
       usuario_id,
       conteudo,
       created_at,
-      usuarios(id,nome,cargo)
+      autor_nome
     `)
     .eq("publicacao_id", publicacaoId)
     .order("created_at", { ascending: true });

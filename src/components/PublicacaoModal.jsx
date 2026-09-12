@@ -130,7 +130,7 @@ export default function PublicacaoModal({ publicacao, onClose }) {
           <div>
             <h2 className="text-2xl font-bold leading-tight">{publicacao.titulo}</h2>
             <p className="mt-2 text-xs text-zinc-500">
-              {publicacao.autor?.nome ? "Publicado por " + publicacao.autor.nome : "DTBJJ"}
+              {publicacao.autor_nome ? "Publicado por " + publicacao.autor_nome : "DTBJJ"}
             </p>
           </div>
 
@@ -197,7 +197,7 @@ export default function PublicacaoModal({ publicacao, onClose }) {
             <div className="space-y-3">
               {comentarios.length ? comentarios.map((item) => (
                 <div key={item.id} className="rounded-2xl bg-white/5 p-3">
-                  <p className="text-sm font-semibold text-zinc-200">{item.usuarios?.nome || "Usuário"}</p>
+                  <p className="text-sm font-semibold text-zinc-200">{item.autor_nome || "Usuário"}</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-400">{item.conteudo}</p>
                 </div>
               )) : <p className="text-sm text-zinc-600">Ainda não há comentários.</p>}
