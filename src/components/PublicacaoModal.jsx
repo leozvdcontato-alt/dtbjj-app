@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, Clock3, MapPin, MessageCircle, Send, X } from "lucide-react";
+import { CalendarDays, Check, Clock3, MapPin, MessageCircle, Send, Trash2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ehAluno, podeGerenciarAcademia } from "@/lib/permissoes";
 import {
   buscarRespostaEvento,
   comentarPublicacao,
+  excluirComentario,
   listarAlunosDasTurmas,
   listarComentarios,
   listarRespostasEvento,
@@ -19,6 +20,19 @@ function dataBR(data) {
     month: "long",
     year: "numeric",
   });
+}
+
+function dataHoraBR(valor, { curta = false } = {}) {
+  if (!valor) return "";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: curta ? undefined : "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(valor));
 }
 
 const RESPOSTAS = [
@@ -112,6 +126,22 @@ export default function PublicacaoModal({ publicacao, onClose }) {
     }
   }
 
+  async function removerComentario(item) {
+    if (item.usuario_id !== usuario.id) return;
+
+    const confirmou = window.confirm("Excluir seu comentário?");
+    if (!confirmou) return;
+
+    try {
+      await excluirComentario(item.id);
+      setComentarios((atuais) =>
+        atuais.filter((comentarioAtual) => comentarioAtual.id !== item.id)
+      );
+    } catch (error) {
+      console.error("Erro ao excluir comentário:", error);
+    }
+  }
+
   async function definirResposta(valor) {
     setResposta(valor);
     await responderEvento(publicacao.id, usuario.aluno_id, valor);
@@ -134,6 +164,9 @@ export default function PublicacaoModal({ publicacao, onClose }) {
             <h2 className="text-2xl font-bold leading-tight">{publicacao.titulo}</h2>
             <p className="mt-2 text-xs text-zinc-500">
               {publicacao.autor_nome ? "Publicado por " + publicacao.autor_nome : "DTBJJ"}
+            </p>
+            <p className="mt-1 text-xs text-zinc-600">
+              Publicado em {dataHoraBR(publicacao.created_at)}
             </p>
           </div>
 
@@ -198,12 +231,38 @@ export default function PublicacaoModal({ publicacao, onClose }) {
             </div>
 
             <div className="space-y-3">
-              {comentarios.length ? comentarios.map((item) => (
-                <div key={item.id} className="rounded-2xl bg-white/5 p-3">
-                  <p className="text-sm font-semibold text-zinc-200">{item.autor_nome || "Usuário"}</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-zinc-400">{item.conteudo}</p>
-                </div>
-              )) : <p className="text-sm text-zinc-600">Ainda não há comentários.</p>}
+              {comentarios.length ? comentarios.map((item) => {
+                const proprio = item.usuario_id === usuario.id;
+
+                return (
+                  <div key={item.id} className="rounded-2xl bg-white/5 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-zinc-200">
+                          {item.autor_nome || "Usuário"}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-zinc-600">
+                          {dataHoraBR(item.created_at, { curta: true })}
+                        </p>
+                      </div>
+
+                      {proprio ? (
+                        <button
+                          type="button"
+                          onClick={() => removerComentario(item)}
+                          aria-label="Excluir meu comentário"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition active:bg-red-950/30 active:text-red-400"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-400">
+                      {item.conteudo}
+                    </p>
+                  </div>
+                );
+              }) : <p className="text-sm text-zinc-600">Ainda não há comentários.</p>}
             </div>
 
             <form onSubmit={enviarComentario} className="mt-4 flex gap-2">
