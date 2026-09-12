@@ -14,9 +14,10 @@ import PageHeader from "./ui/PageHeader";
 import SearchField from "./ui/SearchField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { podeGerenciarAcademia } from "@/lib/permissoes";
+import { ehAdministrador, podeGerenciarAcademia } from "@/lib/permissoes";
 import { FAIXAS, normalizarFaixa, rotuloGraus } from "@/lib/faixas";
 import {
+  excluirAluno,
   listarAlunos,
   obterPerfilAluno,
   salvarAlunoComMatriculas,
@@ -50,6 +51,7 @@ function nomesTurmas(aluno) {
 export default function PainelAlunos({ turmas = [] }) {
   const { usuario } = useAuth();
   const podeEditar = podeGerenciarAcademia(usuario);
+  const podeExcluir = ehAdministrador(usuario);
 
   const [alunos, setAlunos] = useState([]);
   const [busca, setBusca] = useState("");
@@ -146,6 +148,27 @@ export default function PainelAlunos({ turmas = [] }) {
       mostrarToast("Não foi possível abrir o aluno.", "error");
     } finally {
       setCarregandoPerfil(false);
+    }
+  }
+
+  async function removerAluno(aluno) {
+    if (!podeExcluir) return;
+
+    const confirmou = window.confirm(
+      `Excluir definitivamente o aluno ${aluno.nome}? Matrículas, presenças, check-ins e acesso serão removidos. Essa ação não pode ser desfeita.`
+    );
+
+    if (!confirmou) return;
+
+    try {
+      await excluirAluno(aluno.id);
+      setPerfilModal(false);
+      setPerfilAluno(null);
+      await carregarAlunos();
+      mostrarToast("Aluno excluído.", "success");
+    } catch (error) {
+      console.error("Erro ao excluir aluno:", error);
+      mostrarToast(error.message || "Não foi possível excluir o aluno.", "error");
     }
   }
 
@@ -497,6 +520,8 @@ export default function PainelAlunos({ turmas = [] }) {
         perfilAluno={perfilAluno}
         editarAluno={editarAluno}
         podeEditar={podeEditar}
+        podeExcluir={podeExcluir}
+        excluirAluno={removerAluno}
         setPerfilModal={setPerfilModal}
         carregando={carregandoPerfil}
       />

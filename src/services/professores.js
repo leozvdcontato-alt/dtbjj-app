@@ -48,3 +48,38 @@ export async function definirHorariosProfessor(usuarioId, horarioIds) {
 
   if (error) throw error;
 }
+
+async function gerenciarProfessor(body) {
+  const { data, error } = await supabase.functions.invoke("gerenciar-usuario", {
+    body,
+  });
+
+  if (error) {
+    let mensagem = "Não foi possível concluir a ação.";
+    try {
+      const detalhe = await error.context?.json?.();
+      if (detalhe?.error) mensagem = detalhe.error;
+    } catch {
+      // mantém mensagem padrão
+    }
+    throw new Error(mensagem);
+  }
+
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+export async function alterarStatusProfessor(usuarioId, status) {
+  return gerenciarProfessor({
+    acao: "status_professor",
+    usuario_id: usuarioId,
+    status,
+  });
+}
+
+export async function excluirProfessor(usuarioId) {
+  return gerenciarProfessor({
+    acao: "excluir_professor",
+    usuario_id: usuarioId,
+  });
+}
