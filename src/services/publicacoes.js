@@ -40,6 +40,18 @@ export async function listarPublicacoes() {
   return (data || []).map(normalizarPublicacao);
 }
 
+export async function listarPublicacoesInicio(limite = 5) {
+  const { data, error } = await supabase
+    .from("publicacoes")
+    .select(SELECT_PUBLICACAO)
+    .eq("publicado", true)
+    .order("created_at", { ascending: false })
+    .limit(limite);
+
+  if (error) throw error;
+  return (data || []).map(normalizarPublicacao);
+}
+
 export async function buscarPublicacao(id) {
   const { data, error } = await supabase
     .from("publicacoes")

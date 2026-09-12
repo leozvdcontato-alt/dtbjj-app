@@ -4,13 +4,25 @@ import {
   CalendarCheck2,
   CalendarDays,
   ClipboardCheck,
+  Clock3,
   GraduationCap,
+  MapPin,
   Newspaper,
   Users,
 } from "lucide-react";
 import { buscarUltimaChamada } from "@/services/chamadas";
+import { listarPublicacoesInicio } from "@/services/publicacoes";
+import PublicacaoModal from "./PublicacaoModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizarCargo } from "@/lib/permissoes";
+
+function formatarDataEvento(data) {
+  if (!data) return "";
+  return new Date(data + "T12:00:00").toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  });
+}
 
 function formatarData(data, horario) {
   if (!data) return "Data não informada";
@@ -31,20 +43,32 @@ export default function Home({ alunos, turmas, setTela }) {
   const { usuario } = useAuth();
   const professor = normalizarCargo(usuario?.cargo) === "professor";
   const [ultimaChamada, setUltimaChamada] = useState(null);
+  const [publicacoes, setPublicacoes] = useState([]);
+  const [publicacaoAberta, setPublicacaoAberta] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingPublicacoes, setLoadingPublicacoes] = useState(true);
 
   useEffect(() => {
     let ativo = true;
 
     async function carregar() {
-      try {
-        const chamada = await buscarUltimaChamada();
-        if (ativo) setUltimaChamada(chamada);
-      } catch {
-        if (ativo) setUltimaChamada(null);
-      } finally {
-        if (ativo) setLoading(false);
-      }
+      const [resultadoChamada, resultadoPublicacoes] = await Promise.allSettled([
+        buscarUltimaChamada(),
+        listarPublicacoesInicio(5),
+      ]);
+
+      if (!ativo) return;
+
+      setUltimaChamada(
+        resultadoChamada.status === "fulfilled" ? resultadoChamada.value : null
+      );
+      setPublicacoes(
+        resultadoPublicacoes.status === "fulfilled"
+          ? resultadoPublicacoes.value
+          : []
+      );
+      setLoading(false);
+      setLoadingPublicacoes(false);
     }
 
     carregar();
@@ -153,6 +177,91 @@ export default function Home({ alunos, turmas, setTela }) {
       </button>
 
       <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-500">
+              Comunicação
+            </p>
+            <h3 className="mt-1 font-semibold">Notícias e eventos</h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTela({ pagina: "publicacoes", tipoPublicacao: "noticia" })}
+            className="min-h-10 rounded-xl px-3 text-xs font-semibold text-zinc-400 transition active:bg-white/5"
+          >
+            Ver todas
+          </button>
+        </div>
+
+        {loadingPublicacoes ? (
+          <p className="mt-4 text-sm text-zinc-500">Carregando...</p>
+        ) : publicacoes.length === 0 ? (
+          <p className="mt-4 text-sm text-zinc-500">
+            Nenhuma publicação ativa no momento.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {publicacoes.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setPublicacaoAberta(item)}
+                className="w-full rounded-2xl border border-white/5 bg-black/25 p-4 text-left transition active:bg-white/5"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-950/50 text-red-400">
+                    {item.tipo === "evento" ? (
+                      <CalendarDays size={18} />
+                    ) : (
+                      <Newspaper size={18} />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-red-500">
+                        {item.tipo === "evento" ? "Evento" : "Notícia"}
+                      </span>
+                      {item.tipo === "evento" && item.evento_data ? (
+                        <span className="text-xs text-zinc-500">
+                          {formatarDataEvento(item.evento_data)}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <p className="mt-1 line-clamp-2 font-semibold text-zinc-100">
+                      {item.titulo}
+                    </p>
+
+                    {item.tipo === "evento" ? (
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
+                        {item.evento_horario ? (
+                          <span className="flex items-center gap-1">
+                            <Clock3 size={13} />
+                            {String(item.evento_horario).slice(0, 5)}
+                          </span>
+                        ) : null}
+                        {item.evento_local ? (
+                          <span className="flex min-w-0 items-center gap-1">
+                            <MapPin size={13} className="shrink-0" />
+                            <span className="truncate">{item.evento_local}</span>
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-500">
+                        {item.conteudo}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400">
             <CalendarCheck2 size={20} />
@@ -185,6 +294,12 @@ export default function Home({ alunos, turmas, setTela }) {
           </div>
         )}
       </section>
+      {publicacaoAberta ? (
+        <PublicacaoModal
+          publicacao={publicacaoAberta}
+          onClose={() => setPublicacaoAberta(null)}
+        />
+      ) : null}
     </div>
   );
 }
