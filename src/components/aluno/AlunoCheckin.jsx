@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Camera,
   CheckCircle2,
+  Flashlight,
   QrCode,
   RotateCcw,
   X,
   XCircle,
 } from "lucide-react";
-import QrScanner from "qr-scanner";
+import QrScanner from "@/vendor/qr-scanner/qr-scanner.min.js";
 import { registrarCheckin } from "@/services/checkin";
 
 function extrairToken(valor) {
@@ -30,66 +30,81 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
   const [mensagem, setMensagem] = useState("");
   const [detalhe, setDetalhe] = useState("");
   const [erroCamera, setErroCamera] = useState("");
+  const [temFlash, setTemFlash] = useState(false);
+  const [flashLigado, setFlashLigado] = useState(false);
 
-  function encerrarScanner() {
-    scannerRef.current?.stop();
-    scannerRef.current?.destroy();
+  const pararCamera = useCallback(async () => {
+    const scanner = scannerRef.current;
     scannerRef.current = null;
-  }
 
-  async function concluir(token) {
-    if (!token || processandoRef.current) return;
+    if (!scanner) return;
 
-    processandoRef.current = true;
-    encerrarScanner();
-    setEstado("processando");
+    try {
+      await scanner.stop();
+    } catch {
+      // scanner já pode estar parado
+    }
+
+    scanner.destroy();
+    setTemFlash(false);
+    setFlashLigado(false);
+  }, []);
+
+  const concluir = useCallback(
+    async (valor) => {
+      const token = extrairToken(valor);
+
+      if (!token || processandoRef.current) return;
+
+      processandoRef.current = true;
+      await pararCamera();
+
+      setEstado("processando");
+      setMensagem("");
+      setDetalhe("");
+      setErroCamera("");
+
+      try {
+        const resultado = await registrarCheckin(token);
+        const sucesso = ["registrado", "ja_registrado"].includes(
+          resultado?.status
+        );
+
+        setEstado(sucesso ? "sucesso" : "erro");
+        setMensagem(
+          resultado?.mensagem || "Não foi possível realizar o check-in."
+        );
+        setDetalhe(
+          resultado?.turma_nome
+            ? resultado.turma_nome +
+                (resultado.horario ? " • " + resultado.horario : "")
+            : ""
+        );
+
+        if (sucesso) onTokenConsumido?.();
+      } catch (error) {
+        console.error("Erro no check-in:", error);
+        setEstado("erro");
+        setMensagem("Não foi possível validar o check-in agora.");
+      } finally {
+        processandoRef.current = false;
+      }
+    },
+    [onTokenConsumido, pararCamera]
+  );
+
+  const iniciarCamera = useCallback(async () => {
+    setErroCamera("");
     setMensagem("");
     setDetalhe("");
 
-    try {
-      const resultado = await registrarCheckin(token);
-      const sucesso = ["registrado", "ja_registrado"].includes(resultado?.status);
-
-      setEstado(sucesso ? "sucesso" : "erro");
-      setMensagem(resultado?.mensagem || "Não foi possível realizar o check-in.");
-      setDetalhe(
-        resultado?.turma_nome
-          ? resultado.turma_nome +
-              (resultado.horario ? " • " + resultado.horario : "")
-          : ""
-      );
-
-      if (sucesso) onTokenConsumido?.();
-    } catch (error) {
-      console.error("Erro no check-in:", error);
-      setEstado("erro");
-      setMensagem("Não foi possível validar o check-in agora.");
-    } finally {
-      processandoRef.current = false;
-    }
-  }
-
-  async function iniciarCamera() {
-    setErroCamera("");
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setErroCamera(
-        "A câmera não está disponível neste navegador. Verifique se o app está aberto em uma conexão segura."
-      );
-      return;
-    }
-
-    setEstado("camera");
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
     if (!videoRef.current) {
-      setEstado("inicio");
+      setErroCamera("Não foi possível iniciar o leitor. Tente novamente.");
       return;
     }
 
     try {
-      encerrarScanner();
+      await pararCamera();
 
       const scanner = new QrScanner(
         videoRef.current,
@@ -97,65 +112,84 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
           const valor =
             typeof resultado === "string" ? resultado : resultado?.data;
 
-          if (!valor) return;
-
-          const token = extrairToken(valor);
-          concluir(token);
+          if (valor) concluir(valor);
         },
         {
           preferredCamera: "environment",
+          returnDetailedScanResult: true,
+          maxScansPerSecond: 12,
           highlightScanRegion: false,
           highlightCodeOutline: false,
-          returnDetailedScanResult: true,
-          maxScansPerSecond: 10,
           calculateScanRegion(video) {
-            const menorLado = Math.min(video.videoWidth, video.videoHeight);
-            const tamanho = Math.round(menorLado * 0.68);
+            const tamanho = Math.round(
+              Math.min(video.videoWidth, video.videoHeight) * 0.68
+            );
 
             return {
               x: Math.round((video.videoWidth - tamanho) / 2),
               y: Math.round((video.videoHeight - tamanho) / 2),
               width: tamanho,
               height: tamanho,
-              downScaledWidth: 400,
-              downScaledHeight: 400,
+              downScaledWidth: 420,
+              downScaledHeight: 420,
             };
           },
         }
       );
 
       scannerRef.current = scanner;
+      setEstado("camera");
       await scanner.start();
+
+      try {
+        const disponivel = await scanner.hasFlash();
+        setTemFlash(disponivel);
+      } catch {
+        setTemFlash(false);
+      }
     } catch (error) {
-      encerrarScanner();
+      console.error("Erro ao abrir câmera:", error);
+      await pararCamera();
       setEstado("inicio");
 
-      const nome = error?.name || "";
-      const mensagem =
-        nome === "NotAllowedError"
-          ? "Permita o acesso à câmera nas configurações do navegador."
-          : nome === "NotFoundError"
-            ? "Nenhuma câmera foi encontrada neste aparelho."
-            : "Não foi possível abrir a câmera. Tente novamente.";
+      const mensagem = String(error?.message || error || "").toLowerCase();
 
-      setErroCamera(mensagem);
+      if (mensagem.includes("permission") || mensagem.includes("notallowed")) {
+        setErroCamera(
+          "A câmera está bloqueada. Libere a permissão da câmera para o DTBJJ nas configurações do navegador."
+        );
+      } else {
+        setErroCamera(
+          "Não foi possível acessar a câmera. Verifique a permissão e tente novamente."
+        );
+      }
     }
-  }
+  }, [concluir, pararCamera]);
 
-  function cancelarCamera() {
-    encerrarScanner();
-    setEstado("inicio");
-    setErroCamera("");
-  }
+  const alternarFlash = useCallback(async () => {
+    const scanner = scannerRef.current;
+    if (!scanner || !temFlash) return;
+
+    try {
+      await scanner.toggleFlash();
+      setFlashLigado(scanner.isFlashOn());
+    } catch {
+      setTemFlash(false);
+    }
+  }, [temFlash]);
 
   useEffect(() => {
     if (!tokenInicial) return undefined;
 
     Promise.resolve().then(() => concluir(tokenInicial));
     return undefined;
-  }, [tokenInicial]);
+  }, [tokenInicial, concluir]);
 
-  useEffect(() => () => encerrarScanner(), []);
+  useEffect(() => () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+    scanner?.destroy();
+  }, []);
 
   const sucesso = estado === "sucesso";
 
@@ -166,9 +200,7 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-700 text-white shadow-lg shadow-red-950/30">
             <QrCode size={30} />
           </div>
-
           <h2 className="mt-4 text-2xl font-bold">Check-in</h2>
-
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
             Escaneie o QR Code do local. O check-in abre 15 minutos antes da
             aula e fecha 1 hora após o início.
@@ -177,8 +209,8 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
       ) : null}
 
       {estado === "camera" ? (
-        <section className="fixed inset-0 z-50 flex flex-col bg-black">
-          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+        <section className="-mx-4 -mt-5 overflow-hidden bg-black">
+          <div className="relative min-h-[calc(100dvh-7rem)] bg-black">
             <video
               ref={videoRef}
               playsInline
@@ -186,48 +218,69 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
               className="absolute inset-0 h-full w-full object-cover"
             />
 
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative aspect-square w-[72vw] max-w-[340px] rounded-[32px] shadow-[0_0_0_9999px_rgba(0,0,0,0.58)]">
-                <span className="absolute left-0 top-0 h-14 w-14 rounded-tl-[28px] border-l-4 border-t-4 border-red-600" />
-                <span className="absolute right-0 top-0 h-14 w-14 rounded-tr-[28px] border-r-4 border-t-4 border-red-600" />
-                <span className="absolute bottom-0 left-0 h-14 w-14 rounded-bl-[28px] border-b-4 border-l-4 border-red-600" />
-                <span className="absolute bottom-0 right-0 h-14 w-14 rounded-br-[28px] border-b-4 border-r-4 border-red-600" />
+            <div className="absolute inset-0 bg-black/20" />
 
-                <div className="absolute left-5 right-5 top-1/2 h-0.5 -translate-y-1/2 animate-pulse bg-red-500/80 shadow-[0_0_14px_rgba(239,68,68,0.85)]" />
-              </div>
-            </div>
-
-            <div className="absolute inset-x-0 top-0 flex items-center justify-between px-5 pb-5 pt-[max(18px,env(safe-area-inset-top))]">
+            <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-5 pt-[max(20px,env(safe-area-inset-top))]">
               <button
                 type="button"
-                onClick={cancelarCamera}
-                aria-label="Fechar câmera"
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md"
+                onClick={async () => {
+                  await pararCamera();
+                  setEstado("inicio");
+                }}
+                aria-label="Fechar leitor"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md"
               >
                 <X size={22} />
               </button>
 
-              <div className="rounded-full bg-black/45 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md">
-                Ler QR Code
-              </div>
-
-              <div className="h-11 w-11" aria-hidden="true" />
+              {temFlash ? (
+                <button
+                  type="button"
+                  onClick={alternarFlash}
+                  aria-label={flashLigado ? "Desligar flash" : "Ligar flash"}
+                  className={
+                    "flex h-11 w-11 items-center justify-center rounded-full backdrop-blur-md " +
+                    (flashLigado
+                      ? "bg-white text-black"
+                      : "bg-black/55 text-white")
+                  }
+                >
+                  <Flashlight size={21} />
+                </button>
+              ) : (
+                <div className="h-11 w-11" />
+              )}
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 px-6 pb-[max(28px,env(safe-area-inset-bottom))] text-center">
-              <p className="text-lg font-semibold text-white">
-                Posicione o QR dentro do quadrado
-              </p>
-              <p className="mt-2 text-sm text-white/65">
-                A leitura acontece automaticamente.
-              </p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-8">
+              <div className="relative aspect-square w-full max-w-[310px]">
+                <div className="absolute inset-0 rounded-[2rem] border border-white/35" />
+
+                <span className="absolute left-0 top-0 h-14 w-14 rounded-tl-[2rem] border-l-4 border-t-4 border-red-600" />
+                <span className="absolute right-0 top-0 h-14 w-14 rounded-tr-[2rem] border-r-4 border-t-4 border-red-600" />
+                <span className="absolute bottom-0 left-0 h-14 w-14 rounded-bl-[2rem] border-b-4 border-l-4 border-red-600" />
+                <span className="absolute bottom-0 right-0 h-14 w-14 rounded-br-[2rem] border-b-4 border-r-4 border-red-600" />
+
+                <div className="absolute left-5 right-5 top-1/2 h-px animate-pulse bg-red-500/80 shadow-[0_0_14px_rgba(239,68,68,0.8)]" />
+              </div>
+
+              <div className="mt-8 rounded-2xl bg-black/55 px-5 py-3 text-center backdrop-blur-md">
+                <p className="text-sm font-semibold text-white">
+                  Aponte para o QR Code
+                </p>
+                <p className="mt-1 text-xs text-white/65">
+                  Mantenha o código dentro do quadrado
+                </p>
+              </div>
             </div>
           </div>
         </section>
       ) : estado === "processando" ? (
         <section className="rounded-3xl border border-white/10 bg-[#121212] p-8 text-center">
           <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/15 border-t-red-600" />
-          <p className="mt-4 text-sm text-zinc-400">Validando sua aula...</p>
+          <p className="mt-4 text-sm text-zinc-400">
+            Validando sua aula...
+          </p>
         </section>
       ) : estado === "sucesso" || estado === "erro" ? (
         <section className="rounded-3xl border border-white/10 bg-[#121212] p-6 text-center">
@@ -265,10 +318,10 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
           <button
             type="button"
             onClick={iniciarCamera}
-            className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-red-700 font-semibold text-white transition hover:bg-red-600"
+            className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-red-700 font-semibold text-white transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           >
-            <Camera size={21} />
-            Abrir câmera
+            <QrCode size={21} />
+            Ler QR Code
           </button>
 
           {erroCamera ? (
@@ -278,8 +331,8 @@ export default function AlunoCheckin({ tokenInicial = "", onTokenConsumido }) {
           ) : null}
 
           <p className="mt-4 text-center text-xs leading-5 text-zinc-600">
-            Funciona no PWA do iPhone e Android. Você também pode escanear o QR
-            pela câmera normal do celular.
+            A câmera abre dentro do app. No iPhone e Android, permita o acesso
+            quando o sistema solicitar.
           </p>
         </section>
       )}
