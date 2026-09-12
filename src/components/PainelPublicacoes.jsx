@@ -165,9 +165,33 @@ export default function PainelPublicacoes({ tipoInicial = "noticia" }) {
 
         {form.tipo === "evento" ? (
           <div className="grid gap-3 sm:grid-cols-3">
-            <input type="date" value={form.evento_data} onChange={(e) => setForm((f) => ({ ...f, evento_data: e.target.value }))} className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
-            <input type="time" value={form.evento_horario} onChange={(e) => setForm((f) => ({ ...f, evento_horario: e.target.value }))} className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
-            <input value={form.evento_local} onChange={(e) => setForm((f) => ({ ...f, evento_local: e.target.value }))} placeholder="Local" className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none" />
+            <label className="grid gap-2">
+              <span className="text-xs font-semibold text-zinc-400">Data do evento</span>
+              <input
+                type="date"
+                value={form.evento_data}
+                onChange={(e) => setForm((f) => ({ ...f, evento_data: e.target.value }))}
+                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+              />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-semibold text-zinc-400">Horário do evento</span>
+              <input
+                type="time"
+                value={form.evento_horario}
+                onChange={(e) => setForm((f) => ({ ...f, evento_horario: e.target.value }))}
+                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+              />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-xs font-semibold text-zinc-400">Local do evento</span>
+              <input
+                value={form.evento_local}
+                onChange={(e) => setForm((f) => ({ ...f, evento_local: e.target.value }))}
+                placeholder="Ex.: Magnólia"
+                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+              />
+            </label>
           </div>
         ) : null}
 
