@@ -22,7 +22,7 @@ function gerarSenhaTemporaria() {
     sufixo += chars[byte % chars.length];
   }
 
-  return "Dtbjj#" + sufixo;
+  return "Dtbjj#7" + sufixo;
 }
 
 Deno.serve(async (req: Request) => {
