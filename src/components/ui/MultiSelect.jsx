@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 export default function MultiSelect({
   options = [],
@@ -8,6 +8,32 @@ export default function MultiSelect({
   placeholder = "Selecione",
 }) {
   const [aberto, setAberto] = useState(false);
+  const containerRef = useRef(null);
+  const listaId = useId();
+
+  useEffect(() => {
+    if (!aberto) return undefined;
+
+    function fecharFora(event) {
+      if (!containerRef.current?.contains(event.target)) {
+        setAberto(false);
+      }
+    }
+
+    function fecharEscape(event) {
+      if (event.key === "Escape") {
+        setAberto(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", fecharFora);
+    document.addEventListener("keydown", fecharEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", fecharFora);
+      document.removeEventListener("keydown", fecharEscape);
+    };
+  }, [aberto]);
 
   function toggleOption(id) {
     if (value.includes(id)) {
@@ -27,20 +53,21 @@ export default function MultiSelect({
       ? placeholder
       : selecionadas.length <= 2
         ? selecionadas.join(", ")
-        : selecionadas.length + " turmas selecionadas";
+        : `${selecionadas.length} selecionadas`;
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative min-w-0">
       <button
         type="button"
         onClick={() => setAberto((valor) => !valor)}
         aria-expanded={aberto}
-        className="flex h-12 w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#171717] px-4 text-left text-sm text-white outline-none transition hover:border-white/15 focus-visible:border-red-700 focus-visible:ring-2 focus-visible:ring-red-950"
+        aria-haspopup="listbox"
+        aria-controls={listaId}
+        className="flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#171717] px-4 text-left text-sm text-white outline-none transition hover:border-white/15 focus-visible:border-red-700 focus-visible:ring-2 focus-visible:ring-red-950"
       >
         <span className={selecionadas.length ? "truncate" : "truncate text-zinc-500"}>
           {resumo}
         </span>
-
         <ChevronDown
           size={18}
           className={
@@ -51,10 +78,15 @@ export default function MultiSelect({
       </button>
 
       {aberto ? (
-        <div className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-white/10 bg-[#171717] p-2 shadow-2xl">
+        <div
+          id={listaId}
+          role="listbox"
+          aria-multiselectable="true"
+          className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-white/10 bg-[#171717] p-2 shadow-2xl"
+        >
           {options.length === 0 ? (
             <div className="px-3 py-3 text-sm text-zinc-500">
-              Nenhuma turma cadastrada.
+              Nenhuma opção disponível.
             </div>
           ) : (
             options.map((option) => {
@@ -64,12 +96,14 @@ export default function MultiSelect({
                 <button
                   key={option.id}
                   type="button"
+                  role="option"
+                  aria-selected={selecionada}
                   onClick={() => toggleOption(option.id)}
                   className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
                 >
-                  <span className="min-w-0 truncate">{option.nome}</span>
-
+                  <span className="min-w-0 flex-1 break-words">{option.nome}</span>
                   <span
+                    aria-hidden="true"
                     className={
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border " +
                       (selecionada

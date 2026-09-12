@@ -1,8 +1,18 @@
 {
   "rewrites": [
-    {
-      "source": "/instalar",
-      "destination": "/"
-    }
+    { "source": "/instalar", "destination": "/" },
+    { "source": "/inicio", "destination": "/" },
+    { "source": "/alunos", "destination": "/" },
+    { "source": "/chamada", "destination": "/" },
+    { "source": "/turmas", "destination": "/" },
+    { "source": "/turmas/:id", "destination": "/" },
+    { "source": "/professores", "destination": "/" },
+    { "source": "/locais", "destination": "/" },
+    { "source": "/publicacoes", "destination": "/" },
+    { "source": "/comunicados", "destination": "/" },
+    { "source": "/checkin", "destination": "/" },
+    { "source": "/frequencia", "destination": "/" },
+    { "source": "/mais", "destination": "/" },
+    { "source": "/perfil", "destination": "/" }
   ]
 }
