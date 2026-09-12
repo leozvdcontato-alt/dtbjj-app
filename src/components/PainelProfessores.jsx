@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Copy, KeyRound, MessageCircle, UserPlus, UserRound } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  Mail,
+  UserPlus,
+  UserRound,
+} from "lucide-react";
 import PageHeader from "./ui/PageHeader";
 import EmptyState from "./ui/EmptyState";
 import MultiSelect from "./ui/MultiSelect";
@@ -11,18 +17,6 @@ import {
 import { listarTurmas } from "@/services/turmas";
 import { useToast } from "@/contexts/ToastContext";
 
-function mensagemAcessoProfessor(acesso) {
-  return [
-    "🥋 *DTBJJ – acesso de professor*",
-    "",
-    `E-mail: ${acesso.email}`,
-    `Senha temporária: ${acesso.senha_temporaria}`,
-    "",
-    "Acesse: https://dtbjj-app.vercel.app",
-    "Entre com os dados acima e, depois do primeiro acesso, altere sua senha em Mais > Meu perfil > Senha.",
-  ].join("\n");
-}
-
 export default function PainelProfessores() {
   const [professores, setProfessores] = useState([]);
   const [turmas, setTurmas] = useState([]);
@@ -31,7 +25,7 @@ export default function PainelProfessores() {
   const [enviando, setEnviando] = useState(false);
   const [salvandoTurmas, setSalvandoTurmas] = useState("");
   const [selecoes, setSelecoes] = useState({});
-  const [acessoCriado, setAcessoCriado] = useState(null);
+  const [conviteCriado, setConviteCriado] = useState(null);
   const { mostrarToast } = useToast();
 
   async function carregar() {
@@ -85,17 +79,24 @@ export default function PainelProfessores() {
     }
 
     setEnviando(true);
-    setAcessoCriado(null);
+    setConviteCriado(null);
 
     try {
-      const acesso = await criarProfessor({ nome: nome.trim(), email: email.trim() });
+      const convite = await criarProfessor({
+        nome: nome.trim(),
+        email: email.trim(),
+      });
+
       setNome("");
       setEmail("");
-      setAcessoCriado(acesso);
+      setConviteCriado(convite);
       await carregar();
-      mostrarToast("Acesso do professor criado.", "success");
+      mostrarToast("Convite do professor preparado.", "success");
     } catch (error) {
-      mostrarToast(error.message || "Não foi possível criar o professor.", "error");
+      mostrarToast(
+        error.message || "Não foi possível criar o professor.",
+        "error"
+      );
     } finally {
       setEnviando(false);
     }
@@ -116,28 +117,38 @@ export default function PainelProfessores() {
     }
   }
 
-  async function copiarAcesso() {
-    if (!acessoCriado) return;
+  async function copiarLink() {
+    if (!conviteCriado?.invite_link) return;
 
     try {
-      await navigator.clipboard.writeText(mensagemAcessoProfessor(acessoCriado));
-      mostrarToast("Acesso copiado.", "success");
+      await navigator.clipboard.writeText(conviteCriado.invite_link);
+      mostrarToast("Link de convite copiado.", "success");
     } catch {
-      mostrarToast("Não foi possível copiar o acesso.", "error");
+      mostrarToast("Não foi possível copiar o link.", "error");
     }
   }
 
-  function compartilharAcesso() {
-    if (!acessoCriado) return;
-    const texto = encodeURIComponent(mensagemAcessoProfessor(acessoCriado));
-    window.open(`https://wa.me/?text=${texto}`, "_blank", "noopener,noreferrer");
+  function visualizarEmail() {
+    if (!conviteCriado?.email_html) return;
+
+    const blob = new Blob([conviteCriado.email_html], {
+      type: "text/html;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const janela = window.open(url, "_blank", "noopener,noreferrer");
+
+    if (!janela) {
+      mostrarToast("Permita pop-ups para visualizar o e-mail.", "error");
+    }
+
+    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
 
   return (
     <section className="space-y-5">
       <PageHeader
         title="Professores"
-        subtitle="Crie o acesso e defina em quais turmas cada professor atua."
+        subtitle="Crie o convite e defina em quais turmas cada professor atua."
       />
 
       <form
@@ -145,7 +156,9 @@ export default function PainelProfessores() {
         className="space-y-3 rounded-3xl border border-white/10 bg-[#121212] p-5"
       >
         <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">Nome</label>
+          <label className="mb-2 block text-sm font-medium text-zinc-300">
+            Nome
+          </label>
           <input
             value={nome}
             onChange={(event) => setNome(event.target.value)}
@@ -154,7 +167,9 @@ export default function PainelProfessores() {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">E-mail</label>
+          <label className="mb-2 block text-sm font-medium text-zinc-300">
+            E-mail
+          </label>
           <input
             type="email"
             value={email}
@@ -169,37 +184,41 @@ export default function PainelProfessores() {
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-red-700 font-semibold text-white disabled:opacity-50"
         >
           <UserPlus size={18} />
-          {enviando ? "Criando acesso..." : "Criar professor"}
+          {enviando ? "Preparando convite..." : "Criar professor"}
         </button>
       </form>
 
-      {acessoCriado ? (
+      {conviteCriado ? (
         <section className="rounded-3xl border border-emerald-900/40 bg-emerald-950/20 p-5">
           <div className="flex items-center gap-3 text-emerald-300">
-            <KeyRound size={20} />
-            <h3 className="font-semibold">Acesso criado</h3>
+            <Mail size={20} />
+            <h3 className="font-semibold">Convite preparado</h3>
           </div>
-          <p className="mt-3 text-sm text-zinc-300">{acessoCriado.email}</p>
-          <div className="mt-2 rounded-2xl bg-black/30 px-4 py-3 font-mono text-sm text-white">
-            {acessoCriado.senha_temporaria}
-          </div>
-          <p className="mt-3 text-xs leading-5 text-zinc-500">
-            Essa senha aparece somente agora. Envie ao professor e peça que ele a altere após entrar.
+
+          <p className="mt-3 text-sm text-zinc-300">
+            {conviteCriado.email}
           </p>
+          <p className="mt-2 text-xs leading-5 text-zinc-500">
+            O professor já foi criado, mas o e-mail automático ainda está
+            desativado enquanto o modelo passa por aprovação.
+          </p>
+
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={copiarAcesso}
-              className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
+              onClick={visualizarEmail}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold"
             >
-              <Copy size={16} /> Copiar
+              <ExternalLink size={16} />
+              Ver e-mail
             </button>
             <button
               type="button"
-              onClick={compartilharAcesso}
-              className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-700 text-sm font-semibold text-white"
+              onClick={copiarLink}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold"
             >
-              <MessageCircle size={16} /> WhatsApp
+              <Copy size={16} />
+              Copiar link
             </button>
           </div>
         </section>
@@ -209,7 +228,7 @@ export default function PainelProfessores() {
         <EmptyState
           Icon={UserRound}
           title="Nenhum professor cadastrado"
-          description="Crie o primeiro acesso de professor acima."
+          description="Crie o primeiro convite de professor acima."
         />
       ) : (
         <div className="space-y-3">
@@ -229,7 +248,10 @@ export default function PainelProfessores() {
                   options={turmas}
                   value={selecoes[professor.id] || []}
                   onChange={(valor) =>
-                    setSelecoes((atual) => ({ ...atual, [professor.id]: valor }))
+                    setSelecoes((atual) => ({
+                      ...atual,
+                      [professor.id]: valor,
+                    }))
                   }
                   placeholder="Selecione as turmas"
                 />
@@ -239,7 +261,9 @@ export default function PainelProfessores() {
                   disabled={salvandoTurmas === professor.id}
                   className="mt-3 h-10 w-full rounded-2xl bg-white/10 text-sm font-semibold text-zinc-200 disabled:opacity-50"
                 >
-                  {salvandoTurmas === professor.id ? "Salvando..." : "Salvar turmas"}
+                  {salvandoTurmas === professor.id
+                    ? "Salvando..."
+                    : "Salvar turmas"}
                 </button>
               </div>
             </article>
