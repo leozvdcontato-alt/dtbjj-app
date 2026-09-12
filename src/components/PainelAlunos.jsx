@@ -109,14 +109,14 @@ export default function PainelAlunos({ turmas = [] }) {
   }, []);
 
   function abrirNovoAluno() {
-    if (!admin) return;
+    if (!podeEditar) return;
     setEditando(null);
     setForm({ ...FORM_INICIAL, turmas: [] });
     setModal(true);
   }
 
   function editarAluno(aluno) {
-    if (!admin) return;
+    if (!podeEditar) return;
 
     setEditando(aluno);
     setForm({
@@ -151,7 +151,7 @@ export default function PainelAlunos({ turmas = [] }) {
 
   async function salvarAluno(event) {
     event.preventDefault();
-    if (!admin) return;
+    if (!podeEditar) return;
 
     if (!form.nome.trim()) {
       mostrarToast("Informe o nome do aluno.", "error");
@@ -240,7 +240,7 @@ export default function PainelAlunos({ turmas = [] }) {
               : alunos.length + " alunos disponíveis"
           }
           action={
-            admin ? (
+            podeEditar ? (
               <button
                 type="button"
                 onClick={abrirNovoAluno}
@@ -376,7 +376,7 @@ export default function PainelAlunos({ turmas = [] }) {
             description={
               possuiFiltros
                 ? "Tente ajustar a busca ou os filtros."
-                : admin
+                : podeEditar
                   ? "Cadastre ou aguarde o primeiro aluno entrar por uma turma."
                   : "Nenhum aluno das suas turmas está disponível."
             }
@@ -389,7 +389,7 @@ export default function PainelAlunos({ turmas = [] }) {
                 >
                   Limpar filtros
                 </button>
-              ) : admin ? (
+              ) : podeEditar ? (
                 <button
                   type="button"
                   onClick={abrirNovoAluno}
@@ -479,7 +479,7 @@ export default function PainelAlunos({ turmas = [] }) {
         )}
       </section>
 
-      {admin ? (
+      {podeEditar ? (
         <AlunoModal
           modal={modal}
           editando={editando}
@@ -496,7 +496,7 @@ export default function PainelAlunos({ turmas = [] }) {
         perfilModal={perfilModal}
         perfilAluno={perfilAluno}
         editarAluno={editarAluno}
-        podeEditar={admin}
+        podeEditar={podeEditar}
         setPerfilModal={setPerfilModal}
         carregando={carregandoPerfil}
       />
