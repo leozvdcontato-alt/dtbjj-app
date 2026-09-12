@@ -188,7 +188,7 @@ export default function InstalarPWA() {
                     numero="1"
                     Icone={Share}
                     titulo="Abra pelo Safari e toque em Compartilhar"
-                    descricao="É o ícone do quadrado com uma seta para cima."
+                    descricao="Dependendo do layout do Safari, use Compartilhar ou Mais > Compartilhar."
                   />
                   <Passo
                     numero="2"
@@ -198,8 +198,14 @@ export default function InstalarPWA() {
                   />
                   <Passo
                     numero="3"
+                    Icone={Smartphone}
+                    titulo="Ative “Abrir como App da Web”"
+                    descricao="Isso faz o DTBJJ abrir com comportamento de aplicativo."
+                  />
+                  <Passo
+                    numero="4"
                     Icone={CheckCircle2}
-                    titulo="Confirme em “Adicionar”"
+                    titulo="Toque em “Adicionar”"
                     descricao="O ícone do DTBJJ App aparecerá junto aos seus aplicativos."
                   />
                 </>
