@@ -25,17 +25,17 @@ export default function Toast({
   const atual = estilos[tipo];
 
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top duration-300">
+    <div className="fixed left-1/2 top-[max(20px,env(safe-area-inset-top))] z-[80] w-[calc(100%-32px)] max-w-sm -translate-x-1/2 animate-in fade-in slide-in-from-top duration-300">
       <div
         className={`
           ${atual.bg}
-          w-80
+          w-full
           rounded-2xl
           shadow-2xl
           overflow-hidden
         `}
       >
-        <div className="flex items-center gap-3 p-4 text-white">
+        <div className="flex min-h-14 items-center gap-3 p-4 text-white" role="status" aria-live="polite">
 
           {atual.icon}
 

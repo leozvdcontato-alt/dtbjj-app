@@ -56,3 +56,35 @@ button {
     width: 0%;
   }
 }
+
+
+/* Escala visual do app:
+   superfícies = 24px | controles = 16px | microcontroles = 12px | pills = 999px */
+:focus-visible {
+  outline: 2px solid rgba(185, 28, 28, 0.9);
+  outline-offset: 2px;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+a[href] {
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

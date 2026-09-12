@@ -39,6 +39,8 @@ export default function PublicacaoModal({ publicacao, onClose }) {
   const [publico, setPublico] = useState([]);
 
   useEffect(() => {
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     let ativo = true;
 
     async function carregar() {
@@ -74,6 +76,7 @@ export default function PublicacaoModal({ publicacao, onClose }) {
     carregar().catch((error) => console.error("Erro ao abrir publicação:", error));
     return () => {
       ativo = false;
+      document.body.style.overflow = overflowAnterior;
     };
   }, [aluno, gestao, publicacao, usuario]);
 
@@ -116,17 +119,17 @@ export default function PublicacaoModal({ publicacao, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[30px] border border-white/10 bg-[#101010] sm:rounded-[30px]">
+      <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white/10 bg-[#101010] sm:rounded-3xl">
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#101010]/95 px-5 py-4 backdrop-blur-xl">
           <span className="rounded-full bg-red-950/60 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-red-400">
             {publicacao.tipo === "evento" ? "Evento" : "Notícia"}
           </span>
-          <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-zinc-300">
+          <button type="button" onClick={onClose} aria-label="Fechar publicação" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-zinc-300 transition active:bg-white/10">
             <X size={20} />
           </button>
         </header>
 
-        <div className="space-y-6 p-5">
+        <div className="space-y-6 p-5 pb-[max(24px,env(safe-area-inset-bottom))]">
           <div>
             <h2 className="text-2xl font-bold leading-tight">{publicacao.titulo}</h2>
             <p className="mt-2 text-xs text-zinc-500">

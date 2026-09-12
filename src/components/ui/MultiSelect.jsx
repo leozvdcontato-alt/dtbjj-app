@@ -65,7 +65,7 @@ export default function MultiSelect({
                   key={option.id}
                   type="button"
                   onClick={() => toggleOption(option.id)}
-                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
+                  className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
                 >
                   <span className="min-w-0 truncate">{option.nome}</span>
 

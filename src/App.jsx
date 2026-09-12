@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard";
 import ResetSenha from "./components/ResetSenha";
+import InstalarPWA from "./components/InstalarPWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
@@ -14,6 +15,7 @@ function urlTemRecuperacao() {
 
 export default function App() {
   const { usuario, loading } = useAuth();
+  const paginaInstalacao = window.location.pathname.replace(/\/$/, "") === "/instalar";
   const [recuperandoSenha, setRecuperandoSenha] = useState(urlTemRecuperacao);
 
   useEffect(() => {
@@ -25,6 +27,10 @@ export default function App() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  if (paginaInstalacao) {
+    return <InstalarPWA />;
+  }
 
   if (recuperandoSenha) {
     return <ResetSenha onConcluido={() => setRecuperandoSenha(false)} />;
