@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ehAdministrador, ehAluno, rotuloCargo } from "@/lib/permissoes";
 import { useAlunoPortal } from "@/hooks/useAlunoPortal";
+import { listarTurmas } from "@/services/turmas";
 
 import PainelMais from "./PainelMais";
 import Perfil from "./Perfil";
@@ -85,11 +86,11 @@ export default function Dashboard() {
 
     Promise.all([
       supabase.from("alunos").select("*").order("nome"),
-      supabase.from("turmas").select("*").order("nome"),
-    ]).then(([resultadoAlunos, resultadoTurmas]) => {
+      listarTurmas(),
+    ]).then(([resultadoAlunos, listaTurmas]) => {
       if (!ativo) return;
       setAlunos(resultadoAlunos.error ? [] : resultadoAlunos.data || []);
-      setTurmas(resultadoTurmas.error ? [] : resultadoTurmas.data || []);
+      setTurmas(listaTurmas || []);
     });
 
     return () => {

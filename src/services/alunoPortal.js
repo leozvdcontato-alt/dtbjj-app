@@ -27,6 +27,11 @@ export async function carregarPortalAluno(alunoId) {
             dias,
             horario,
             professor,
+            locais (
+              id,
+              nome,
+              endereco
+            ),
             turma_horarios (
               id,
               dia_semana,
@@ -46,7 +51,12 @@ export async function carregarPortalAluno(alunoId) {
             data,
             horario,
             turma_id,
+            aula_extra_id,
             turmas (
+              id,
+              nome
+            ),
+            aulas_extras (
               id,
               nome
             )

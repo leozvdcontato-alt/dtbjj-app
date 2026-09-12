@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Copy, MapPin, MessageCircle } from "lucide-react";
+import { ChevronRight, Copy, MapPin, MessageCircle, UserRound } from "lucide-react";
 import { listarTurmas } from "@/services/turmas";
 import { useToast } from "@/contexts/ToastContext";
 import { agruparHorarios } from "@/lib/horarios";
@@ -66,75 +66,87 @@ export default function PainelTurmas({ setTela }) {
       </div>
 
       <div className="space-y-3">
-        {turmas.map((turma) => (
-          <article
-            key={turma.id}
-            className="rounded-3xl border border-white/10 bg-[#121212] p-5"
-          >
-            <button
-              type="button"
-              onClick={() => setTela({ pagina: "turma", turma })}
-              className="flex w-full items-start justify-between gap-4 text-left"
+        {turmas.map((turma) => {
+          const professores = (turma.turma_professores || [])
+            .map((item) => item.usuarios?.nome)
+            .filter(Boolean);
+
+          return (
+            <article
+              key={turma.id}
+              className="rounded-3xl border border-white/10 bg-[#121212] p-5"
             >
-              <div className="min-w-0">
-                <h3 className="truncate text-lg font-bold">{turma.nome}</h3>
-                {turma.turma_horarios?.length ? (
-                  <div className="mt-1 space-y-1 text-sm text-zinc-500">
-                    {agruparHorarios(turma.turma_horarios).map((grupo) => (
-                      <p key={grupo.texto}>{grupo.texto}</p>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {[turma.dias, turma.horario].filter(Boolean).join(" • ") ||
-                      "Horário ainda não estruturado"}
-                  </p>
-                )}
-                {turma.locais?.nome ? (
+              <button
+                type="button"
+                onClick={() => setTela({ pagina: "turma", turma })}
+                className="flex w-full items-start justify-between gap-4 text-left"
+              >
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-bold">{turma.nome}</h3>
+                  {turma.turma_horarios?.length ? (
+                    <div className="mt-1 space-y-1 text-sm text-zinc-500">
+                      {agruparHorarios(turma.turma_horarios).map((grupo) => (
+                        <p key={grupo.texto}>{grupo.texto}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {[turma.dias, turma.horario].filter(Boolean).join(" • ") ||
+                        "Horário ainda não estruturado"}
+                    </p>
+                  )}
                   <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-600">
-                    <MapPin size={14} />
-                    {turma.locais.nome}
+                    <UserRound size={14} />
+                    {professores.length
+                      ? professores.join(", ")
+                      : "Professor indisponível ainda"}
                   </p>
-                ) : null}
-              </div>
-
-              <ChevronRight size={20} className="mt-1 shrink-0 text-white/30" />
-            </button>
-
-            {turma.codigo_convite ? (
-              <div className="mt-4 rounded-2xl bg-black/30 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-600">
-                      Código para novos alunos
+                  {turma.locais?.nome ? (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-600">
+                      <MapPin size={14} />
+                      {turma.locais.nome}
                     </p>
-                    <p className="mt-1 font-mono text-sm font-semibold text-zinc-300">
-                      {turma.codigo_convite}
-                    </p>
+                  ) : null}
+                </div>
+
+                <ChevronRight size={20} className="mt-1 shrink-0 text-white/30" />
+              </button>
+
+              {turma.codigo_convite ? (
+                <div className="mt-4 rounded-2xl bg-black/30 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-600">
+                        Código para novos alunos
+                      </p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-zinc-300">
+                        {turma.codigo_convite}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => copiarCodigo(turma.codigo_convite)}
+                      aria-label="Copiar código da turma"
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-zinc-400"
+                    >
+                      <Copy size={16} />
+                    </button>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => copiarCodigo(turma.codigo_convite)}
-                    aria-label="Copiar código da turma"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-zinc-400"
+                    onClick={() => compartilharWhatsApp(turma)}
+                    className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 text-sm font-semibold text-white transition hover:bg-emerald-600"
                   >
-                    <Copy size={16} />
+                    <MessageCircle size={17} />
+                    Compartilhar cadastro no WhatsApp
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => compartilharWhatsApp(turma)}
-                  className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 text-sm font-semibold text-white transition hover:bg-emerald-600"
-                >
-                  <MessageCircle size={17} />
-                  Compartilhar cadastro no WhatsApp
-                </button>
-              </div>
-            ) : null}
-          </article>
-        ))}
+              ) : null}
+            </article>
+          );
+        })}
       </div>
     </div>
   );
