@@ -8,13 +8,15 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
+  const primeiroAcesso = modo === "primeiro_acesso";
+  const convite = modo === "convite";
 
   async function salvarNovaSenha(event) {
     event.preventDefault();
     setErro("");
 
-    if (senha.length < 6) {
-      setErro("A senha deve ter pelo menos 6 caracteres.");
+    if (senha.length < 8) {
+      setErro("A senha deve ter pelo menos 8 caracteres.");
       return;
     }
 
@@ -32,24 +34,38 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
 
       if (error) throw error;
 
+      if (primeiroAcesso) {
+        const { error: confirmarError } = await supabase.rpc(
+          "confirmar_troca_senha_professor"
+        );
+        if (confirmarError) throw confirmarError;
+      }
+
       setSucesso(true);
       setSenha("");
       setConfirmar("");
     } catch (error) {
       console.error("Erro ao redefinir senha:", error);
-      setErro("Não foi possível redefinir a senha. Solicite um novo link e tente novamente.");
+      setErro(
+        primeiroAcesso
+          ? "Não foi possível concluir a troca de senha. Tente novamente."
+          : "Não foi possível redefinir a senha. Solicite um novo link e tente novamente."
+      );
     } finally {
       setLoading(false);
     }
   }
 
   async function voltarAoLogin() {
+    if (primeiroAcesso) {
+      await onConcluido?.();
+      return;
+    }
+
     await supabase.auth.signOut();
     window.history.replaceState({}, document.title, window.location.pathname);
     onConcluido?.();
   }
-
-  const convite = modo === "convite";
 
   return (
     <main className="min-h-screen bg-black px-6 py-10 text-white">
@@ -65,12 +81,18 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
             Dream Team BJJ
           </p>
           <h1 className="text-3xl font-bold tracking-tight">
-            {convite ? "Crie sua senha" : "Crie uma nova senha"}
+            {primeiroAcesso
+              ? "Crie sua senha pessoal"
+              : convite
+                ? "Crie sua senha"
+                : "Crie uma nova senha"}
           </h1>
           <p className="mt-2 text-sm leading-6 text-gray-400">
-            {convite
-              ? "Seu acesso como professor está pronto. Defina sua senha para concluir o cadastro."
-              : "Escolha uma nova senha para voltar a acessar sua conta."}
+            {primeiroAcesso
+              ? "Você entrou com uma senha temporária. Para continuar, crie uma senha pessoal."
+              : convite
+                ? "Seu acesso como professor está pronto. Defina sua senha para concluir o cadastro."
+                : "Escolha uma nova senha para voltar a acessar sua conta."}
           </p>
         </header>
 
@@ -78,7 +100,11 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
           {sucesso ? (
             <div className="text-center">
               <div className="rounded-xl border border-emerald-900/30 bg-emerald-950/30 p-4 text-sm text-emerald-300">
-                {convite ? "Senha criada com sucesso." : "Senha alterada com sucesso."}
+                {primeiroAcesso
+                  ? "Senha pessoal criada com sucesso."
+                  : convite
+                    ? "Senha criada com sucesso."
+                    : "Senha alterada com sucesso."}
               </div>
 
               <button
@@ -86,7 +112,7 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
                 onClick={voltarAoLogin}
                 className="mt-5 h-12 w-full rounded-xl bg-red-700 font-semibold transition hover:bg-red-600"
               >
-                Entrar no DTBJJ APP
+                {primeiroAcesso ? "Continuar para o app" : "Entrar no DTBJJ APP"}
               </button>
             </div>
           ) : (
@@ -122,7 +148,11 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
                 disabled={loading}
                 className="h-12 w-full rounded-xl bg-red-700 font-semibold transition hover:bg-red-600 disabled:opacity-50"
               >
-                {loading ? "Salvando..." : convite ? "Criar minha senha" : "Salvar nova senha"}
+                {loading
+                  ? "Salvando..."
+                  : primeiroAcesso || convite
+                    ? "Criar minha senha"
+                    : "Salvar nova senha"}
               </button>
             </form>
           )}

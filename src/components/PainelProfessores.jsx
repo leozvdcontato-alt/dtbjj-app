@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Copy,
+  KeyRound,
   MessageCircle,
   ShieldCheck,
   UserPlus,
@@ -38,7 +39,7 @@ export default function PainelProfessores({ onAtualizado }) {
   const [enviando, setEnviando] = useState(false);
   const [salvando, setSalvando] = useState("");
   const [selecoes, setSelecoes] = useState({});
-  const [conviteCriado, setConviteCriado] = useState(null);
+  const [acessoCriado, setAcessoCriado] = useState(null);
   const { mostrarToast } = useToast();
 
   const opcoes = useMemo(() => montarOpcoes(turmas), [turmas]);
@@ -105,20 +106,20 @@ export default function PainelProfessores({ onAtualizado }) {
     }
 
     setEnviando(true);
-    setConviteCriado(null);
+    setAcessoCriado(null);
 
     try {
       const nomeProfessor = nome.trim();
-      const convite = await criarProfessor({
+      const acesso = await criarProfessor({
         nome: nomeProfessor,
         email: email.trim(),
       });
 
       setNome("");
       setEmail("");
-      setConviteCriado({ ...convite, nome: nomeProfessor });
+      setAcessoCriado({ ...acesso, nome: nomeProfessor });
       await carregar();
-      mostrarToast("Convite do professor preparado.", "success");
+      mostrarToast("Professor criado com senha temporária.", "success");
     } catch (error) {
       mostrarToast(
         error.message || "Não foi possível criar o professor.",
@@ -150,32 +151,42 @@ export default function PainelProfessores({ onAtualizado }) {
     }
   }
 
-  async function copiarLink() {
-    if (!conviteCriado?.invite_link) return;
+  function textoAcesso() {
+    if (!acessoCriado?.senha_temporaria) return "";
 
+    return [
+      `E-mail: ${acessoCriado.email}`,
+      `Senha temporária: ${acessoCriado.senha_temporaria}`,
+    ].join("\n");
+  }
+
+  async function copiarAcesso() {
     try {
-      await navigator.clipboard.writeText(conviteCriado.invite_link);
-      mostrarToast("Link de convite copiado.", "success");
+      await navigator.clipboard.writeText(textoAcesso());
+      mostrarToast("Acesso copiado.", "success");
     } catch {
-      mostrarToast("Não foi possível copiar o link.", "error");
+      mostrarToast("Não foi possível copiar o acesso.", "error");
     }
   }
 
   function enviarWhatsApp() {
-    if (!conviteCriado?.invite_link) return;
+    if (!acessoCriado?.senha_temporaria) return;
 
     const primeiroNome =
-      conviteCriado.nome?.trim()?.split(/\s+/)?.[0] || "Professor";
+      acessoCriado.nome?.trim()?.split(/\s+/)?.[0] || "Professor";
 
     const mensagem = [
       `Olá, ${primeiroNome}! Seu acesso como professor ao DTBJJ APP foi criado.`,
       "",
-      "Use o link abaixo para criar sua senha:",
-      conviteCriado.invite_link,
+      `E-mail: ${acessoCriado.email}`,
+      `Senha temporária: ${acessoCriado.senha_temporaria}`,
       "",
-      "Depois, você já poderá acessar o app normalmente.",
+      "Entre com esses dados. No primeiro acesso, o app vai pedir para você criar sua senha pessoal.",
       "",
-      "Para instalar o DTBJJ APP no celular:",
+      "Acessar o DTBJJ APP:",
+      "https://dtbjj-app.vercel.app",
+      "",
+      "Para instalar no celular:",
       "https://dtbjj-app.vercel.app/instalar?v=2",
     ].join("\n");
 
@@ -190,7 +201,7 @@ export default function PainelProfessores({ onAtualizado }) {
     <section className="space-y-5">
       <PageHeader
         title="Professores"
-        subtitle="Crie o convite e defina os horários em que cada professor atua."
+        subtitle="Cadastre o professor e defina os horários em que ele atua."
       />
 
       <form
@@ -226,20 +237,34 @@ export default function PainelProfessores({ onAtualizado }) {
           className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-red-700 font-semibold text-white disabled:opacity-50"
         >
           <UserPlus size={18} />
-          {enviando ? "Preparando convite..." : "Criar professor"}
+          {enviando ? "Criando acesso..." : "Criar professor"}
         </button>
       </form>
 
-      {conviteCriado ? (
+      {acessoCriado ? (
         <section className="rounded-3xl border border-emerald-900/40 bg-emerald-950/20 p-5">
           <div className="flex items-center gap-3 text-emerald-300">
             <ShieldCheck size={20} />
-            <h3 className="font-semibold">Convite seguro pronto</h3>
+            <h3 className="font-semibold">Acesso criado</h3>
           </div>
 
-          <p className="mt-3 text-sm text-zinc-300">{conviteCriado.email}</p>
-          <p className="mt-2 text-xs leading-5 text-zinc-500">
-            Envie o convite para o professor definir a própria senha.
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+              E-mail
+            </p>
+            <p className="mt-1 break-all text-sm text-zinc-200">{acessoCriado.email}</p>
+
+            <p className="mt-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
+              <KeyRound size={14} />
+              Senha temporária
+            </p>
+            <p className="mt-1 font-mono text-base font-semibold text-white">
+              {acessoCriado.senha_temporaria}
+            </p>
+          </div>
+
+          <p className="mt-3 text-xs leading-5 text-zinc-500">
+            Essa senha é exibida somente agora. No primeiro login, o professor será obrigado a criar uma senha pessoal.
           </p>
 
           <button
@@ -248,16 +273,16 @@ export default function PainelProfessores({ onAtualizado }) {
             className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 text-sm font-semibold text-white"
           >
             <MessageCircle size={18} />
-            Enviar convite no WhatsApp
+            Enviar acesso no WhatsApp
           </button>
 
           <button
             type="button"
-            onClick={copiarLink}
+            onClick={copiarAcesso}
             className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold"
           >
             <Copy size={16} />
-            Copiar link do convite
+            Copiar acesso
           </button>
         </section>
       ) : null}

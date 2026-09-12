@@ -22,7 +22,7 @@ function modoDefinicaoSenhaDaUrl() {
 }
 
 export default function App() {
-  const { usuario, loading } = useAuth();
+  const { usuario, loading, atualizarUsuario } = useAuth();
   const paginaInstalacao = window.location.pathname.replace(/\/$/, "") === "/instalar";
   const [modoSenha, setModoSenha] = useState(modoDefinicaoSenhaDaUrl);
 
@@ -54,6 +54,18 @@ export default function App() {
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
         Carregando...
       </div>
+    );
+  }
+
+  if (
+    usuario?.cargo === "Professor" &&
+    usuario?.troca_senha_obrigatoria
+  ) {
+    return (
+      <ResetSenha
+        modo="primeiro_acesso"
+        onConcluido={atualizarUsuario}
+      />
     );
   }
 
