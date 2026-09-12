@@ -1,5 +1,5 @@
 self.addEventListener("push", (event) => {
-  let data = {};
+  let data;
   try {
     data = event.data ? event.data.json() : {};
   } catch {
@@ -20,17 +20,25 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const destino = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  const destino = new URL(
+    event.notification.data?.url || "/",
+    self.location.origin
+  ).href;
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((janelas) => {
-      for (const janela of janelas) {
-        if ("focus" in janela) {
-          janela.navigate(destino);
-          return janela.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((janelas) => {
+        for (const janela of janelas) {
+          if ("focus" in janela) {
+            janela.navigate(destino);
+            return janela.focus();
+          }
         }
-      }
-      return clients.openWindow ? clients.openWindow(destino) : undefined;
-    })
+
+        return self.clients.openWindow
+          ? self.clients.openWindow(destino)
+          : undefined;
+      })
   );
 });

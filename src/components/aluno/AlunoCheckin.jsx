@@ -148,6 +148,8 @@ export default function AlunoCheckin({
 
     const timer = setTimeout(() => iniciarCamera(), 0);
     return () => clearTimeout(timer);
+    // O efeito reinicia apenas quando muda o token recebido pelo QR externo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenInicial]);
 
   useEffect(() => () => encerrarScanner(), []);

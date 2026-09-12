@@ -61,18 +61,34 @@ export default function AlunoInicio({ portal, setTela }) {
   const [erroPush, setErroPush] = useState("");
 
   useEffect(() => {
-    listarPublicacoes()
-      .then((dados) => setPublicacoes(dados.filter((item) => item.publicado)))
-      .catch((error) => console.error("Erro ao carregar publicações:", error));
+    let cancelado = false;
 
-    if (!pushDisponivel()) {
-      setPush("indisponivel");
-      return;
-    }
+    Promise.resolve()
+      .then(async () => {
+        const dados = await listarPublicacoes();
+        if (!cancelado) {
+          setPublicacoes(dados.filter((item) => item.publicado));
+        }
 
-    statusPush(usuario?.id)
-      .then(setPush)
-      .catch(() => setPush("inativo"));
+        if (!pushDisponivel()) {
+          if (!cancelado) setPush("indisponivel");
+          return;
+        }
+
+        try {
+          const status = await statusPush(usuario?.id);
+          if (!cancelado) setPush(status);
+        } catch {
+          if (!cancelado) setPush("inativo");
+        }
+      })
+      .catch((error) => {
+        if (!cancelado) console.error("Erro ao carregar a Home do aluno:", error);
+      });
+
+    return () => {
+      cancelado = true;
+    };
   }, [usuario?.id]);
 
   const destaques = useMemo(

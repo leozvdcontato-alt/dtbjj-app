@@ -43,7 +43,17 @@ export default function PainelPublicacoes() {
   }
 
   useEffect(() => {
-    recarregar().catch((error) => console.error("Erro ao carregar publicações:", error));
+    let ativo = true;
+
+    Promise.resolve()
+      .then(() => recarregar())
+      .catch((error) => {
+        if (ativo) console.error("Erro ao carregar publicações:", error);
+      });
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   const tituloForm = editando ? "Editar publicação" : "Nova publicação";
