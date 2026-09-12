@@ -6,6 +6,7 @@ import { uploadAvatar } from "@/services/avatarService";
 import { atualizarPerfil } from "@/services/usuarioService";
 import { supabase } from "@/lib/supabase";
 import { rotuloCargo } from "@/lib/permissoes";
+import SenhaInput from "./ui/SenhaInput";
 
 export default function Perfil({ setTela }) {
   const { usuario, atualizarUsuario } = useAuth();
@@ -224,8 +225,7 @@ export default function Perfil({ setTela }) {
       {alterandoSenha && (
         <section className="space-y-3 rounded-3xl border border-white/10 bg-[#121212] p-5">
           <h3 className="font-semibold">Alterar senha</h3>
-          <input
-            type="password"
+          <SenhaInput
             autoComplete="new-password"
             placeholder="Nova senha"
             value={senha.nova}
@@ -234,8 +234,7 @@ export default function Perfil({ setTela }) {
             }
             className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 outline-none focus:border-red-700"
           />
-          <input
-            type="password"
+          <SenhaInput
             autoComplete="new-password"
             placeholder="Confirmar nova senha"
             value={senha.confirmar}

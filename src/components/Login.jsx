@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import CadastroModal from "./CadastroModal";
+import SenhaInput from "./ui/SenhaInput";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -120,8 +121,7 @@ export default function Login() {
 
             <div className="mb-2">
               <label className="mb-2 block text-sm text-gray-400">Senha</label>
-              <input
-                type="password"
+              <SenhaInput
                 autoComplete="current-password"
                 value={senha}
                 onChange={(event) => setSenha(event.target.value)}
