@@ -67,10 +67,8 @@ export default function PainelChamada({
     try {
       setCarregando(true);
 
-      const [alunos, criada] = await Promise.all([
-        listarAlunosAulaExtra(),
-        abrirAulaExtra(extra),
-      ]);
+      const alunos = await listarAlunosAulaExtra();
+      const criada = await abrirAulaExtra(extra);
 
       setAlunosChamada(alunos);
       setPresentes([]);
