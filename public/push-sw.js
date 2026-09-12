@@ -6,12 +6,12 @@ self.addEventListener("push", (event) => {
     data = { body: event.data?.text?.() || "" };
   }
 
-  const title = data.title || "Tatame Pro";
+  const title = data.title || "DTBJJ APP";
   const options = {
     body: data.body || "Você tem uma nova atualização.",
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    tag: data.tag || "tatame-pro",
+    tag: data.tag || "dtbjj-app",
     data: { url: data.url || "/" },
   };
 

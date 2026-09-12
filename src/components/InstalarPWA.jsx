@@ -36,7 +36,7 @@ export default function InstalarPWA() {
   const [instalado, setInstalado] = useState(estaInstalado);
   const [copiado, setCopiado] = useState(false);
   const [plataforma] = useState(detectarPlataforma);
-  const urlInstalacao = window.location.origin + "/instalar";
+  const urlInstalacao = window.location.origin + "/instalar?v=2";
 
   useEffect(() => {
     function prepararPrompt(event) {
@@ -73,8 +73,8 @@ export default function InstalarPWA() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Instalar DTBJJ App",
-          text: "Abra este link para instalar o DTBJJ App no celular.",
+          title: "Instalar DTBJJ APP",
+          text: "Abra este link para instalar o DTBJJ APP no celular.",
           url: urlInstalacao,
         });
         return;
@@ -106,7 +106,7 @@ export default function InstalarPWA() {
             />
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-500">
-                DTBJJ App
+                DTBJJ APP
               </p>
               <h1 className="truncate text-lg font-bold">Instalação</h1>
             </div>
@@ -128,10 +128,10 @@ export default function InstalarPWA() {
             </div>
 
             <h2 className="mt-5 text-3xl font-bold leading-tight tracking-tight">
-              Tenha o DTBJJ App na tela do seu celular
+              Tenha o DTBJJ APP na tela do seu celular
             </h2>
             <p className="mt-3 text-[15px] leading-7 text-zinc-400">
-              O DTBJJ App funciona como um aplicativo instalado, com ícone na
+              O DTBJJ APP funciona como um aplicativo instalado, com ícone na
               tela inicial e acesso rápido, sem precisar procurar o site toda vez.
             </p>
           </div>
@@ -141,7 +141,7 @@ export default function InstalarPWA() {
               <div className="flex items-center gap-3 rounded-2xl bg-emerald-950/30 p-4 text-emerald-300">
                 <CheckCircle2 size={22} className="shrink-0" />
                 <div>
-                  <p className="font-semibold">O DTBJJ App já está instalado</p>
+                  <p className="font-semibold">O DTBJJ APP já está instalado</p>
                   <p className="mt-1 text-xs text-emerald-300/70">
                     Você já pode abrir pelo ícone na tela inicial.
                   </p>
@@ -154,7 +154,7 @@ export default function InstalarPWA() {
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-red-700 px-5 font-semibold text-white transition active:bg-red-800"
               >
                 <Download size={20} />
-                Instalar DTBJJ App
+                Instalar DTBJJ APP
               </button>
             ) : (
               <p className="px-2 py-1 text-sm leading-6 text-zinc-500">
@@ -206,7 +206,7 @@ export default function InstalarPWA() {
                     numero="4"
                     Icone={CheckCircle2}
                     titulo="Toque em “Adicionar”"
-                    descricao="O ícone do DTBJJ App aparecerá junto aos seus aplicativos."
+                    descricao="O ícone do DTBJJ APP aparecerá junto aos seus aplicativos."
                   />
                 </>
               ) : plataforma === "android" ? (
@@ -227,7 +227,7 @@ export default function InstalarPWA() {
                     numero="3"
                     Icone={CheckCircle2}
                     titulo="Confirme a instalação"
-                    descricao="Depois disso, abra o DTBJJ App pelo novo ícone."
+                    descricao="Depois disso, abra o DTBJJ APP pelo novo ícone."
                   />
                 </>
               ) : (
