@@ -6,22 +6,30 @@ import InstalarPWA from "./components/InstalarPWA";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
-function urlTemRecuperacao() {
+function modoDefinicaoSenhaDaUrl() {
   const hash = window.location.hash || "";
   const params = new URLSearchParams(window.location.search);
 
-  return hash.includes("type=recovery") || params.get("type") === "recovery";
+  if (hash.includes("type=invite") || params.get("type") === "invite") {
+    return "convite";
+  }
+
+  if (hash.includes("type=recovery") || params.get("type") === "recovery") {
+    return "recuperacao";
+  }
+
+  return "";
 }
 
 export default function App() {
   const { usuario, loading } = useAuth();
   const paginaInstalacao = window.location.pathname.replace(/\/$/, "") === "/instalar";
-  const [recuperandoSenha, setRecuperandoSenha] = useState(urlTemRecuperacao);
+  const [modoSenha, setModoSenha] = useState(modoDefinicaoSenhaDaUrl);
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
-        setRecuperandoSenha(true);
+        setModoSenha("recuperacao");
       }
     });
 
@@ -32,8 +40,13 @@ export default function App() {
     return <InstalarPWA />;
   }
 
-  if (recuperandoSenha) {
-    return <ResetSenha onConcluido={() => setRecuperandoSenha(false)} />;
+  if (modoSenha) {
+    return (
+      <ResetSenha
+        modo={modoSenha}
+        onConcluido={() => setModoSenha("")}
+      />
+    );
   }
 
   if (loading) {

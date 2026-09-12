@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import SenhaInput from "./ui/SenhaInput";
 
-export default function ResetSenha({ onConcluido }) {
+export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,6 +49,8 @@ export default function ResetSenha({ onConcluido }) {
     onConcluido?.();
   }
 
+  const convite = modo === "convite";
+
   return (
     <main className="min-h-screen bg-black px-6 py-10 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-sm flex-col justify-center">
@@ -62,9 +64,13 @@ export default function ResetSenha({ onConcluido }) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-red-500">
             Dream Team BJJ
           </p>
-          <h1 className="text-3xl font-bold tracking-tight">Crie uma nova senha</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {convite ? "Crie sua senha" : "Crie uma nova senha"}
+          </h1>
           <p className="mt-2 text-sm leading-6 text-gray-400">
-            Escolha uma nova senha para voltar a acessar sua conta.
+            {convite
+              ? "Seu acesso como professor está pronto. Defina sua senha para concluir o cadastro."
+              : "Escolha uma nova senha para voltar a acessar sua conta."}
           </p>
         </header>
 
@@ -72,7 +78,7 @@ export default function ResetSenha({ onConcluido }) {
           {sucesso ? (
             <div className="text-center">
               <div className="rounded-xl border border-emerald-900/30 bg-emerald-950/30 p-4 text-sm text-emerald-300">
-                Senha alterada com sucesso.
+                {convite ? "Senha criada com sucesso." : "Senha alterada com sucesso."}
               </div>
 
               <button
@@ -80,7 +86,7 @@ export default function ResetSenha({ onConcluido }) {
                 onClick={voltarAoLogin}
                 className="mt-5 h-12 w-full rounded-xl bg-red-700 font-semibold transition hover:bg-red-600"
               >
-                Voltar ao login
+                Entrar no DTBJJ APP
               </button>
             </div>
           ) : (
@@ -116,7 +122,7 @@ export default function ResetSenha({ onConcluido }) {
                 disabled={loading}
                 className="h-12 w-full rounded-xl bg-red-700 font-semibold transition hover:bg-red-600 disabled:opacity-50"
               >
-                {loading ? "Salvando..." : "Salvar nova senha"}
+                {loading ? "Salvando..." : convite ? "Criar minha senha" : "Salvar nova senha"}
               </button>
             </form>
           )}
