@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight,
   CalendarCheck2,
+  CalendarDays,
   ClipboardCheck,
   GraduationCap,
+  Newspaper,
   Users,
 } from "lucide-react";
 import { buscarUltimaChamada } from "@/services/chamadas";
+import { useAuth } from "@/contexts/AuthContext";
+import { normalizarCargo } from "@/lib/permissoes";
 
 function formatarData(data, horario) {
   if (!data) return "Data não informada";
@@ -24,6 +28,8 @@ function formatarData(data, horario) {
 }
 
 export default function Home({ alunos, turmas, setTela }) {
+  const { usuario } = useAuth();
+  const professor = normalizarCargo(usuario?.cargo) === "professor";
   const [ultimaChamada, setUltimaChamada] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,6 +67,49 @@ export default function Home({ alunos, turmas, setTela }) {
           Acesso rápido ao que precisa acontecer no tatame.
         </p>
       </div>
+
+      {professor ? (
+        <section className="rounded-3xl border border-white/10 bg-[#121212] p-4">
+          <p className="text-sm font-semibold text-white">
+            Publicar para minhas turmas
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Crie um aviso ou evento sem precisar ir até o menu Mais.
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setTela({
+                  pagina: "publicacoes",
+                  turma: null,
+                  tipoPublicacao: "noticia",
+                })
+              }
+              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-200 transition active:bg-white/10"
+            >
+              <Newspaper size={17} className="text-red-500" />
+              Nova notícia
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTela({
+                  pagina: "publicacoes",
+                  turma: null,
+                  tipoPublicacao: "evento",
+                })
+              }
+              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-200 transition active:bg-white/10"
+            >
+              <CalendarDays size={17} className="text-red-500" />
+              Novo evento
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid grid-cols-2 gap-3">
         <button

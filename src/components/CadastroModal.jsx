@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";\nimport SenhaInput from "./ui/SenhaInput";
 
 const ESTADO_INICIAL = {
   nome: "",
@@ -183,8 +183,7 @@ export default function CadastroModal({ aberto, fechar }) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Campo label="Senha">
-                <input
-                  type="password"
+                <SenhaInput
                   autoComplete="new-password"
                   value={form.senha}
                   onChange={(event) => atualizarCampo("senha", event.target.value)}
@@ -193,8 +192,7 @@ export default function CadastroModal({ aberto, fechar }) {
               </Campo>
 
               <Campo label="Confirmar senha">
-                <input
-                  type="password"
+                <SenhaInput
                   autoComplete="new-password"
                   value={form.confirmarSenha}
                   onChange={(event) =>

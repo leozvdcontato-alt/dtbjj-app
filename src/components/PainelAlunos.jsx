@@ -14,7 +14,7 @@ import PageHeader from "./ui/PageHeader";
 import SearchField from "./ui/SearchField";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
-import { ehAdministrador } from "@/lib/permissoes";
+import { podeGerenciarAcademia } from "@/lib/permissoes";
 import { FAIXAS, normalizarFaixa, rotuloGraus } from "@/lib/faixas";
 import {
   listarAlunos,
@@ -49,7 +49,7 @@ function nomesTurmas(aluno) {
 
 export default function PainelAlunos({ turmas = [] }) {
   const { usuario } = useAuth();
-  const admin = ehAdministrador(usuario);
+  const podeEditar = podeGerenciarAcademia(usuario);
 
   const [alunos, setAlunos] = useState([]);
   const [busca, setBusca] = useState("");

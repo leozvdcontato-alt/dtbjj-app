@@ -21,13 +21,13 @@ const VAZIA = {
   turma_ids: [],
 };
 
-export default function PainelPublicacoes() {
+export default function PainelPublicacoes({ tipoInicial = "noticia" }) {
   const [itens, setItens] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [interacoes, setInteracoes] = useState({});
   const [editando, setEditando] = useState(null);
   const [abrindo, setAbrindo] = useState(null);
-  const [form, setForm] = useState(VAZIA);
+  const [form, setForm] = useState(() => ({\n    ...VAZIA,\n    tipo: tipoInicial === "evento" ? "evento" : "noticia",\n  }));
   const [enviarPush, setEnviarPush] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState("");

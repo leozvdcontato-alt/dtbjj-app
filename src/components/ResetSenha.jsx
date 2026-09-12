@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";\nimport SenhaInput from "./ui/SenhaInput";
 
 export default function ResetSenha({ onConcluido }) {
   const [senha, setSenha] = useState("");
@@ -86,8 +86,7 @@ export default function ResetSenha({ onConcluido }) {
             <form onSubmit={salvarNovaSenha}>
               <div className="mb-4">
                 <label className="mb-2 block text-sm text-gray-400">Nova senha</label>
-                <input
-                  type="password"
+                <SenhaInput
                   autoComplete="new-password"
                   value={senha}
                   onChange={(event) => setSenha(event.target.value)}
@@ -97,8 +96,7 @@ export default function ResetSenha({ onConcluido }) {
 
               <div className="mb-5">
                 <label className="mb-2 block text-sm text-gray-400">Confirmar nova senha</label>
-                <input
-                  type="password"
+                <SenhaInput
                   autoComplete="new-password"
                   value={confirmar}
                   onChange={(event) => setConfirmar(event.target.value)}

@@ -187,7 +187,7 @@ export default function Dashboard() {
             )}
             {paginaAtual === "professores" && admin && <PainelProfessores />}
             {paginaAtual === "locais" && <PainelLocais />}
-            {paginaAtual === "publicacoes" && <PainelPublicacoes />}
+            {paginaAtual === "publicacoes" && (\n              <PainelPublicacoes tipoInicial={tela.tipoPublicacao} />\n            )}
           </>
         )}
 
