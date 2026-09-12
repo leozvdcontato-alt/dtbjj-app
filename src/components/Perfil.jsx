@@ -7,6 +7,8 @@ import { atualizarPerfil } from "@/services/usuarioService";
 import { supabase } from "@/lib/supabase";
 import { rotuloCargo } from "@/lib/permissoes";
 import SenhaInput from "./ui/SenhaInput";
+import RequisitosSenha from "./ui/RequisitosSenha";
+import { senhaValida, TEXTO_REGRA_SENHA } from "@/lib/senha";
 
 export default function Perfil({ setTela }) {
   const { usuario, atualizarUsuario } = useAuth();
@@ -59,8 +61,8 @@ export default function Perfil({ setTela }) {
   }
 
   async function salvarSenha() {
-    if (senha.nova.length < 6) {
-      mostrarToast("A senha deve ter pelo menos 6 caracteres.", "error");
+    if (!senhaValida(senha.nova)) {
+      mostrarToast(TEXTO_REGRA_SENHA, "error");
       return;
     }
 
@@ -225,15 +227,18 @@ export default function Perfil({ setTela }) {
       {alterandoSenha && (
         <section className="space-y-3 rounded-3xl border border-white/10 bg-[#121212] p-5">
           <h3 className="font-semibold">Alterar senha</h3>
-          <SenhaInput
-            autoComplete="new-password"
-            placeholder="Nova senha"
-            value={senha.nova}
-            onChange={(event) =>
-              setSenha((atual) => ({ ...atual, nova: event.target.value }))
-            }
-            className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 outline-none focus:border-red-700"
-          />
+          <div>
+            <SenhaInput
+              autoComplete="new-password"
+              placeholder="Nova senha"
+              value={senha.nova}
+              onChange={(event) =>
+                setSenha((atual) => ({ ...atual, nova: event.target.value }))
+              }
+              className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 outline-none focus:border-red-700"
+            />
+            <RequisitosSenha senha={senha.nova} />
+          </div>
           <SenhaInput
             autoComplete="new-password"
             placeholder="Confirmar nova senha"

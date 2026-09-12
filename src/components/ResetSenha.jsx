@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import SenhaInput from "./ui/SenhaInput";
+import RequisitosSenha from "./ui/RequisitosSenha";
+import { senhaValida, TEXTO_REGRA_SENHA } from "@/lib/senha";
 
 export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
   const [senha, setSenha] = useState("");
@@ -15,8 +17,8 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
     event.preventDefault();
     setErro("");
 
-    if (senha.length < 8) {
-      setErro("A senha deve ter pelo menos 8 caracteres.");
+    if (!senhaValida(senha)) {
+      setErro(TEXTO_REGRA_SENHA);
       return;
     }
 
@@ -125,6 +127,7 @@ export default function ResetSenha({ onConcluido, modo = "recuperacao" }) {
                   onChange={(event) => setSenha(event.target.value)}
                   className="h-12 w-full rounded-xl border border-white/5 bg-[#1A1A1A] px-4 text-white outline-none transition focus:border-red-700"
                 />
+                <RequisitosSenha senha={senha} />
               </div>
 
               <div className="mb-5">
