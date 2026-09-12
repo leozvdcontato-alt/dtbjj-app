@@ -108,3 +108,26 @@ export async function buscarAlunosDaTurma(turmaId) {
     .filter(Boolean)
     .sort(ordenarPorNome);
 }
+
+export async function excluirAluno(alunoId) {
+  const { data, error } = await supabase.functions.invoke("gerenciar-usuario", {
+    body: {
+      acao: "excluir_aluno",
+      aluno_id: alunoId,
+    },
+  });
+
+  if (error) {
+    let mensagem = "Não foi possível excluir o aluno.";
+    try {
+      const detalhe = await error.context?.json?.();
+      if (detalhe?.error) mensagem = detalhe.error;
+    } catch {
+      // mantém mensagem padrão
+    }
+    throw new Error(mensagem);
+  }
+
+  if (data?.error) throw new Error(data.error);
+  return data;
+}

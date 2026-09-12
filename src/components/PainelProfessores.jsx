@@ -3,7 +3,9 @@ import {
   Copy,
   KeyRound,
   MessageCircle,
+  Power,
   ShieldCheck,
+  Trash2,
   UserPlus,
   UserRound,
 } from "lucide-react";
@@ -11,8 +13,10 @@ import PageHeader from "./ui/PageHeader";
 import EmptyState from "./ui/EmptyState";
 import MultiSelect from "./ui/MultiSelect";
 import {
+  alterarStatusProfessor,
   criarProfessor,
   definirHorariosProfessor,
+  excluirProfessor,
   listarProfessores,
 } from "@/services/professores";
 import { listarTurmas } from "@/services/turmas";
@@ -38,6 +42,7 @@ export default function PainelProfessores({ onAtualizado }) {
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [salvando, setSalvando] = useState("");
+  const [gerenciando, setGerenciando] = useState("");
   const [selecoes, setSelecoes] = useState({});
   const [acessoCriado, setAcessoCriado] = useState(null);
   const { mostrarToast } = useToast();
@@ -169,7 +174,8 @@ export default function PainelProfessores({ onAtualizado }) {
     }
   }
 
-  function enviarWhatsApp() {
+  function urlWhatsApp() {
+    if (!acessoCriado?.senha_temporaria) return "#";
     if (!acessoCriado?.senha_temporaria) return;
 
     const primeiroNome =
@@ -190,11 +196,49 @@ export default function PainelProfessores({ onAtualizado }) {
       "https://dtbjj-app.vercel.app/instalar?v=2",
     ].join("\n");
 
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(mensagem)}`,
-      "_blank",
-      "noopener,noreferrer"
+    return `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+  }
+
+  async function alternarStatus(professor) {
+    const novoStatus = professor.status === "Ativo" ? "Inativo" : "Ativo";
+    setGerenciando(professor.id);
+
+    try {
+      await alterarStatusProfessor(professor.id, novoStatus);
+      await carregar();
+      await onAtualizado?.();
+      mostrarToast(
+        novoStatus === "Ativo"
+          ? "Professor ativado."
+          : "Professor inativado.",
+        "success"
+      );
+    } catch (error) {
+      mostrarToast(error.message || "Não foi possível alterar o status.", "error");
+    } finally {
+      setGerenciando("");
+    }
+  }
+
+  async function removerProfessor(professor) {
+    const confirmou = window.confirm(
+      `Excluir definitivamente o professor ${professor.nome}? Essa ação remove o acesso e não pode ser desfeita.`
     );
+
+    if (!confirmou) return;
+
+    setGerenciando(professor.id);
+
+    try {
+      await excluirProfessor(professor.id);
+      await carregar();
+      await onAtualizado?.();
+      mostrarToast("Professor excluído.", "success");
+    } catch (error) {
+      mostrarToast(error.message || "Não foi possível excluir o professor.", "error");
+    } finally {
+      setGerenciando("");
+    }
   }
 
   return (
@@ -267,14 +311,13 @@ export default function PainelProfessores({ onAtualizado }) {
             Essa senha é exibida somente agora. No primeiro login, o professor será obrigado a criar uma senha pessoal.
           </p>
 
-          <button
-            type="button"
-            onClick={enviarWhatsApp}
+          <a
+            href={urlWhatsApp()}
             className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 text-sm font-semibold text-white"
           >
             <MessageCircle size={18} />
             Enviar acesso no WhatsApp
-          </button>
+          </a>
 
           <button
             type="button"
@@ -300,8 +343,22 @@ export default function PainelProfessores({ onAtualizado }) {
               key={professor.id}
               className="rounded-3xl border border-white/10 bg-[#121212] p-5"
             >
-              <p className="font-semibold">{professor.nome}</p>
-              <p className="mt-1 text-sm text-zinc-500">{professor.email}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">{professor.nome}</p>
+                  <p className="mt-1 break-all text-sm text-zinc-500">{professor.email}</p>
+                </div>
+                <span
+                  className={
+                    "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold " +
+                    (professor.status === "Ativo"
+                      ? "bg-emerald-950/60 text-emerald-400"
+                      : "bg-zinc-800 text-zinc-400")
+                  }
+                >
+                  {professor.status}
+                </span>
+              </div>
 
               <div className="mt-4">
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">
@@ -327,6 +384,27 @@ export default function PainelProfessores({ onAtualizado }) {
                   {salvando === professor.id
                     ? "Salvando..."
                     : "Salvar horários"}
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+                <button
+                  type="button"
+                  onClick={() => alternarStatus(professor)}
+                  disabled={gerenciando === professor.id}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-300 disabled:opacity-50"
+                >
+                  <Power size={16} />
+                  {professor.status === "Ativo" ? "Inativar" : "Ativar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removerProfessor(professor)}
+                  disabled={gerenciando === professor.id}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-red-900/40 bg-red-950/20 px-3 text-sm font-semibold text-red-300 disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                  Excluir
                 </button>
               </div>
             </article>

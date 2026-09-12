@@ -3,6 +3,7 @@ import {
   IdCard,
   Pencil,
   Phone,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -14,6 +15,8 @@ export default function AlunoPerfil({
   perfilAluno,
   editarAluno,
   podeEditar = false,
+  podeExcluir = false,
+  excluirAluno,
   setPerfilModal,
   carregando,
 }) {
@@ -194,7 +197,7 @@ export default function AlunoPerfil({
           </div>
         </div>
 
-        <div className="sticky bottom-0 flex gap-3 border-t border-white/10 bg-[#101010]/95 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 backdrop-blur-xl sm:px-6">
+        <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-white/10 bg-[#101010]/95 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4 backdrop-blur-xl sm:px-6">
           <button
             type="button"
             onClick={() => setPerfilModal(false)}
@@ -214,6 +217,17 @@ export default function AlunoPerfil({
             >
               <Pencil size={17} />
               Editar aluno
+            </button>
+          ) : null}
+
+          {podeExcluir ? (
+            <button
+              type="button"
+              onClick={() => excluirAluno?.(aluno)}
+              className="col-span-2 flex h-12 items-center justify-center gap-2 rounded-2xl border border-red-900/40 bg-red-950/20 text-sm font-semibold text-red-300 transition hover:bg-red-950/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700"
+            >
+              <Trash2 size={17} />
+              Excluir aluno definitivamente
             </button>
           ) : null}
         </div>
