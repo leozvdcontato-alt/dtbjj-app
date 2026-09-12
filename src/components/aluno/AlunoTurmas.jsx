@@ -1,5 +1,13 @@
-import { Clock3, GraduationCap, UserRound } from "lucide-react";
+import {
+  Clock3,
+  GraduationCap,
+  Map,
+  MapPin,
+  Navigation,
+  UserRound,
+} from "lucide-react";
 import { agruparHorarios } from "@/lib/horarios";
+import { montarGoogleMapsUrl, montarWazeUrl } from "@/services/locais";
 
 export default function AlunoTurmas({ portal }) {
   const { turmas, loading, erro } = portal;
@@ -55,12 +63,37 @@ export default function AlunoTurmas({ portal }) {
                   </div>
                 ) : null}
 
-                {turma.professor && (
-                  <div className="flex items-center gap-2">
-                    <UserRound size={16} className="text-zinc-600" />
-                    <span>{turma.professor}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <UserRound size={16} className="text-zinc-600" />
+                  <span>{turma.professor || "Professor indisponível ainda"}</span>
+                </div>
+
+                {turma.locais?.endereco ? (
+                  <>
+                    <div className="flex items-start gap-2">
+                      <MapPin size={16} className="mt-0.5 shrink-0 text-zinc-600" />
+                      <span>{turma.locais.endereco}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <a
+                        href={montarWazeUrl(turma.locais.endereco)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold"
+                      >
+                        <Navigation size={15} /> Waze
+                      </a>
+                      <a
+                        href={montarGoogleMapsUrl(turma.locais.endereco)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold"
+                      >
+                        <Map size={15} /> Maps
+                      </a>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </article>
           ))}

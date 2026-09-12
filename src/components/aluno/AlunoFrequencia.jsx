@@ -47,7 +47,14 @@ export default function AlunoFrequencia({ portal }) {
           {presencas.map(({ id, chamada }) => (
             <article key={id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#121212] px-4 py-4">
               <div>
-                <h3 className="font-semibold">{chamada.turmas?.nome || "Treino DTBJJ"}</h3>
+                <h3 className="font-semibold">
+                  {chamada.aulas_extras?.nome || chamada.turmas?.nome || "Treino DTBJJ"}
+                </h3>
+                {chamada.aula_extra_id ? (
+                  <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-red-500">
+                    Aula extra
+                  </p>
+                ) : null}
                 <p className="mt-1 text-sm text-zinc-500">
                   {formatarData(chamada.data)}{chamada.horario ? ` · ${chamada.horario}` : ""}
                 </p>

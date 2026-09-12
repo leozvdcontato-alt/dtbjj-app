@@ -4,13 +4,20 @@ import {
   Download,
   Expand,
   Loader2,
+  Map,
   MapPin,
+  Navigation,
   QrCode,
 } from "lucide-react";
 import PageHeader from "./ui/PageHeader";
 import EmptyState from "./ui/EmptyState";
 import QrStoriesModal from "./QrStoriesModal";
-import { listarLocais, montarLinkCheckin } from "@/services/locais";
+import {
+  listarLocais,
+  montarGoogleMapsUrl,
+  montarLinkCheckin,
+  montarWazeUrl,
+} from "@/services/locais";
 import { baixarSvgComoPng, gerarMaterialQr } from "@/services/qrMateriais";
 import { useToast } from "@/contexts/ToastContext";
 
@@ -121,7 +128,7 @@ export default function PainelLocais() {
       <section className="space-y-5">
         <PageHeader
           title="Locais e QR"
-          subtitle="Cada local tem um QR fixo de check-in. Baixe o A4 ou exiba em tela cheia durante a aula."
+          subtitle="Endereços, navegação e QR fixo de check-in de cada local."
         />
 
         {locais.length === 0 ? (
@@ -141,17 +148,43 @@ export default function PainelLocais() {
                   className="overflow-hidden rounded-3xl border border-white/10 bg-[#121212]"
                 >
                   <div className="p-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/5 text-zinc-500">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-zinc-500">
                         <MapPin size={19} />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="font-semibold">{local.nome}</h3>
-                        <p className="text-xs text-zinc-600">
+                        {local.endereco ? (
+                          <p className="mt-1 text-sm leading-5 text-zinc-500">
+                            {local.endereco}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-zinc-600">
                           {local.ativo ? "Check-in ativo" : "Check-in desativado"}
                         </p>
                       </div>
                     </div>
+
+                    {local.endereco ? (
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <a
+                          href={montarWazeUrl(local.endereco)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
+                        >
+                          <Navigation size={17} /> Waze
+                        </a>
+                        <a
+                          href={montarGoogleMapsUrl(local.endereco)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
+                        >
+                          <Map size={17} /> Maps
+                        </a>
+                      </div>
+                    ) : null}
 
                     <div className="mt-5 rounded-3xl bg-white p-4">
                       {preview ? (

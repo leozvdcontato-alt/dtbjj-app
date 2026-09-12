@@ -177,7 +177,9 @@ export default function Home({ alunos, turmas, setTela }) {
                 </p>
               </div>
               <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-zinc-300">
-                {ultimaChamada.presentes}/{ultimaChamada.matriculados}
+                {ultimaChamada.matriculados === null
+                  ? `${ultimaChamada.presentes} presentes`
+                  : `${ultimaChamada.presentes}/${ultimaChamada.matriculados}`}
               </span>
             </div>
           </div>
