@@ -30,6 +30,7 @@ export default defineConfig({
         name: "DTBJJ APP",
         short_name: "DTBJJ APP",
         description: "Aplicativo oficial da DTBJJ para alunos, professores e gestão",
+        lang: "pt-BR",
         theme_color: "#991b1b",
         background_color: "#000000",
         display: "standalone",

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ehAdministrador, ehAluno, rotuloCargo } from "@/lib/permissoes";
+import { paginaDaRota, rotaDaTela } from "@/lib/rotas";
 import { useAlunoPortal } from "@/hooks/useAlunoPortal";
 import { listarTurmas } from "@/services/turmas";
 
@@ -48,22 +50,27 @@ const PAGINAS_ADMIN = ["professores"];
 
 export default function Dashboard() {
   const { usuario } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const aluno = ehAluno(usuario);
   const admin = ehAdministrador(usuario);
-  const paramsUrl = new URLSearchParams(window.location.search);
+  const paramsUrl = new URLSearchParams(location.search);
   const tokenCheckin = paramsUrl.get("checkin") || "";
   const publicacaoInicialId = paramsUrl.get("publicacao") || "";
+  const tipoPublicacao = paramsUrl.get("tipo") || "noticia";
 
   const [alunos, setAlunos] = useState([]);
   const [turmas, setTurmas] = useState([]);
-  const [tela, setTela] = useState({
-    pagina: aluno && tokenCheckin
+  const [gestaoCarregada, setGestaoCarregada] = useState(false);
+
+  const rota = paginaDaRota(location.pathname);
+  const paginaSolicitada =
+    aluno && tokenCheckin
       ? "checkin"
       : aluno && publicacaoInicialId
         ? "comunicados"
-        : "home",
-    turma: null,
-  });
+        : rota.pagina;
 
   const portalAluno = useAlunoPortal(usuario?.aluno_id, aluno);
 
@@ -75,9 +82,14 @@ export default function Dashboard() {
     [admin, aluno]
   );
 
-  const paginaAtual = paginasPermitidas.has(tela.pagina)
-    ? tela.pagina
+  const paginaAtual = paginasPermitidas.has(paginaSolicitada)
+    ? paginaSolicitada
     : "home";
+
+  const turmaAtual =
+    paginaAtual === "turma"
+      ? turmas.find((turma) => turma.id === rota.turmaId) || null
+      : null;
 
   async function recarregarGestao() {
     if (aluno) return;
@@ -89,6 +101,7 @@ export default function Dashboard() {
 
     setAlunos(resultadoAlunos.error ? [] : resultadoAlunos.data || []);
     setTurmas(listaTurmas || []);
+    setGestaoCarregada(true);
   }
 
   useEffect(() => {
@@ -103,6 +116,7 @@ export default function Dashboard() {
       if (!ativo) return;
       setAlunos(resultadoAlunos.error ? [] : resultadoAlunos.data || []);
       setTurmas(listaTurmas || []);
+      setGestaoCarregada(true);
     });
 
     return () => {
@@ -110,16 +124,27 @@ export default function Dashboard() {
     };
   }, [aluno]);
 
-  function limparPublicacaoUrl() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("publicacao");
-    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  function setTela(destino) {
+    const rotaDestino = rotaDaTela(destino);
+    const busca = new URLSearchParams();
+
+    if (destino.tipoPublicacao) {
+      busca.set("tipo", destino.tipoPublicacao);
+    }
+
+    navigate(busca.size ? `${rotaDestino}?${busca.toString()}` : rotaDestino);
   }
 
-  function limparTokenCheckin() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("checkin");
-    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  function limparParametro(nome) {
+    const busca = new URLSearchParams(location.search);
+    busca.delete(nome);
+    navigate(
+      {
+        pathname: location.pathname,
+        search: busca.toString() ? `?${busca.toString()}` : "",
+      },
+      { replace: true }
+    );
   }
 
   return (
@@ -129,7 +154,7 @@ export default function Dashboard() {
           <header className="mb-7 flex items-center justify-between">
             <button
               type="button"
-              onClick={() => setTela({ pagina: "perfil", turma: null })}
+              onClick={() => setTela({ pagina: "perfil" })}
               className="flex min-w-0 items-center gap-3 text-left"
             >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
@@ -173,8 +198,8 @@ export default function Dashboard() {
             {paginaAtual === "checkin" && (
               <AlunoCheckin
                 tokenInicial={tokenCheckin}
-                onTokenConsumido={limparTokenCheckin}
-                onFechar={() => setTela({ pagina: "home", turma: null })}
+                onTokenConsumido={() => limparParametro("checkin")}
+                onFechar={() => setTela({ pagina: "home" })}
               />
             )}
             {paginaAtual === "frequencia" && (
@@ -183,7 +208,7 @@ export default function Dashboard() {
             {paginaAtual === "comunicados" && (
               <AlunoPublicacoes
                 publicacaoInicialId={publicacaoInicialId}
-                onPublicacaoConsumida={limparPublicacaoUrl}
+                onPublicacaoConsumida={() => limparParametro("publicacao")}
               />
             )}
           </>
@@ -193,17 +218,34 @@ export default function Dashboard() {
               <Home alunos={alunos} turmas={turmas} setTela={setTela} />
             )}
             {paginaAtual === "alunos" && <PainelAlunos turmas={turmas} />}
-            {paginaAtual === "chamada" && <PainelChamada turmas={turmas} />}
+            {paginaAtual === "chamada" && (
+              <PainelChamada
+                turmas={turmas}
+                onChamadaRegistrada={recarregarGestao}
+              />
+            )}
             {paginaAtual === "turmas" && <PainelTurmas setTela={setTela} />}
             {paginaAtual === "turma" && (
-              <TelaTurma turma={tela.turma} setTela={setTela} />
+              gestaoCarregada ? (
+                turmaAtual ? (
+                  <TelaTurma turma={turmaAtual} setTela={setTela} />
+                ) : (
+                  <div className="rounded-3xl border border-white/10 bg-[#121212] p-6 text-sm text-zinc-400">
+                    Turma não encontrada.
+                  </div>
+                )
+              ) : (
+                <div className="py-16 text-center text-sm text-zinc-500">
+                  Carregando turma...
+                </div>
+              )
             )}
             {paginaAtual === "professores" && admin && (
               <PainelProfessores onAtualizado={recarregarGestao} />
             )}
             {paginaAtual === "locais" && <PainelLocais />}
             {paginaAtual === "publicacoes" && (
-              <PainelPublicacoes tipoInicial={tela.tipoPublicacao} />
+              <PainelPublicacoes tipoInicial={tipoPublicacao} />
             )}
           </>
         )}
@@ -213,7 +255,7 @@ export default function Dashboard() {
       </main>
 
       <BottomNavigation
-        tela={{ ...tela, pagina: paginaAtual }}
+        tela={{ pagina: paginaAtual }}
         setTela={setTela}
         usuario={usuario}
       />
