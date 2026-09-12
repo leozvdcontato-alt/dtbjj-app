@@ -44,7 +44,7 @@ export default function AlunoPublicacoes({ publicacaoInicialId, onPublicacaoCons
 
       <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {[["todos", "Todos"], ["noticia", "Notícias"], ["evento", "Eventos"]].map(([valor, rotulo]) => (
-          <button key={valor} type="button" onClick={() => setFiltro(valor)} className={"min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition " +  + (filtro === valor ? "bg-red-700 text-white" : "bg-white/5 text-zinc-400")}>{rotulo}</button>
+          <button key={valor} type="button" onClick={() => setFiltro(valor)} className={"min-h-11 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition " + (filtro === valor ? "bg-red-700 text-white" : "bg-white/5 text-zinc-400")}>{rotulo}</button>
         ))}
       </div>
 
