@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import SenhaInput from "./ui/SenhaInput";
+import RequisitosSenha from "./ui/RequisitosSenha";
+import { senhaValida, TEXTO_REGRA_SENHA } from "@/lib/senha";
 
 const ESTADO_INICIAL = {
   nome: "",
@@ -47,8 +49,8 @@ export default function CadastroModal({ aberto, fechar }) {
       return;
     }
 
-    if (form.senha.length < 6) {
-      setErro("A senha deve ter pelo menos 6 caracteres.");
+    if (!senhaValida(form.senha)) {
+      setErro(TEXTO_REGRA_SENHA);
       return;
     }
 
@@ -190,6 +192,7 @@ export default function CadastroModal({ aberto, fechar }) {
                   onChange={(event) => atualizarCampo("senha", event.target.value)}
                   className={inputClass}
                 />
+                <RequisitosSenha senha={form.senha} />
               </Campo>
 
               <Campo label="Confirmar senha">
