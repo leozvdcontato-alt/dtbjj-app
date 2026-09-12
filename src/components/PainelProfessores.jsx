@@ -17,7 +17,7 @@ import {
 import { listarTurmas } from "@/services/turmas";
 import { useToast } from "@/contexts/ToastContext";
 
-export default function PainelProfessores() {
+export default function PainelProfessores({ onAtualizado }) {
   const [professores, setProfessores] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [nome, setNome] = useState("");
@@ -108,6 +108,7 @@ export default function PainelProfessores() {
     try {
       await definirTurmasProfessor(professorId, selecoes[professorId] || []);
       await carregar();
+      await onAtualizado?.();
       mostrarToast("Turmas do professor atualizadas.", "success");
     } catch (error) {
       console.error("Erro ao salvar turmas do professor:", error);

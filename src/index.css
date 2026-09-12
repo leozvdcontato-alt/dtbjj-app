@@ -88,3 +88,28 @@ a[href] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Controles nativos móveis não podem ultrapassar o container. */
+input,
+textarea,
+select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type="date"],
+input[type="time"] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-inline-size: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input[type="date"],
+  input[type="time"] {
+    display: block;
+  }
+}

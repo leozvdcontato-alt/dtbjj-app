@@ -34,6 +34,13 @@ export function AuthProvider({ children }) {
       return null;
     }
 
+    if (data.status !== "Ativo") {
+      setUsuario(null);
+      setErroPerfil("Seu acesso está inativo. Procure a administração da DTBJJ.");
+      await supabase.auth.signOut();
+      return null;
+    }
+
     const perfil = {
       ...data,
       email: authUser.email,

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Plus, UsersRound } from "lucide-react";
+import { Plus, UsersRound, X } from "lucide-react";
 import { buscarAlunosDaTurma } from "@/services/alunos";
 import {
   abrirAulaExtra,
+  cancelarAulaExtra,
   criarChamada,
   listarAlunosAulaExtra,
   salvarPresencasAulaExtra,
@@ -10,6 +11,7 @@ import {
 import { registrarPresencas } from "@/services/presencas";
 import { listarLocais } from "@/services/locais";
 import { useToast } from "@/contexts/ToastContext";
+import { horaAgoraApp } from "@/lib/dataHora";
 
 export default function PainelChamada({
   turmas,
@@ -27,10 +29,7 @@ export default function PainelChamada({
   const [extra, setExtra] = useState({
     nome: "",
     localId: "",
-    horario: new Date().toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    horario: horaAgoraApp(),
   });
   const [extraAberta, setExtraAberta] = useState(null);
 
@@ -107,6 +106,23 @@ export default function PainelChamada({
     setTurmaSelecionada("");
     setExtraAberta(null);
     setExtra((atual) => ({ ...atual, nome: "" }));
+  }
+
+  async function cancelarExtra() {
+    if (!extraAberta?.aula_extra_id || carregando) return;
+
+    try {
+      setCarregando(true);
+      await cancelarAulaExtra(extraAberta.aula_extra_id);
+      mostrarToast("Aula extra cancelada.", "success");
+      limpar();
+      onChamadaRegistrada?.();
+    } catch (error) {
+      console.error(error);
+      mostrarToast(error.message || "Não foi possível cancelar a aula extra.", "error");
+    } finally {
+      setCarregando(false);
+    }
   }
 
   async function confirmarChamada() {
@@ -242,7 +258,7 @@ export default function PainelChamada({
                     setExtra((atual) => ({ ...atual, nome: event.target.value }))
                   }
                   placeholder="Ex.: Open mat, treino de domingo"
-                  className="h-12 w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 outline-none focus:border-red-700"
+                  className="h-12 min-w-0 w-full max-w-full rounded-2xl border border-white/10 bg-[#1A1A1A] px-4 outline-none focus:border-red-700"
                 />
               </div>
 
@@ -264,7 +280,7 @@ export default function PainelChamada({
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0 overflow-hidden">
                 <label className="mb-2 block text-sm text-zinc-400">Horário</label>
                 <input
                   type="time"
@@ -303,13 +319,26 @@ export default function PainelChamada({
               <p className="text-gray-400">{presentes.length} presença(s)</p>
             </div>
 
-            <button
-              onClick={confirmarChamada}
-              disabled={carregando}
-              className="h-11 rounded-xl bg-green-700 px-5 font-semibold hover:bg-green-600 disabled:opacity-50"
-            >
-              {carregando ? "Salvando..." : "Confirmar chamada"}
-            </button>
+            <div className="flex gap-2">
+              {tipo === "extra" ? (
+                <button
+                  type="button"
+                  onClick={cancelarExtra}
+                  disabled={carregando}
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-red-900/50 bg-red-950/30 px-4 text-sm font-semibold text-red-300 disabled:opacity-50"
+                >
+                  <X size={16} />
+                  Cancelar
+                </button>
+              ) : null}
+              <button
+                onClick={confirmarChamada}
+                disabled={carregando}
+                className="h-11 rounded-xl bg-green-700 px-5 font-semibold hover:bg-green-600 disabled:opacity-50"
+              >
+                {carregando ? "Salvando..." : "Confirmar chamada"}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -79,6 +79,18 @@ export default function Dashboard() {
     ? tela.pagina
     : "home";
 
+  async function recarregarGestao() {
+    if (aluno) return;
+
+    const [resultadoAlunos, listaTurmas] = await Promise.all([
+      supabase.from("alunos").select("*").order("nome"),
+      listarTurmas(),
+    ]);
+
+    setAlunos(resultadoAlunos.error ? [] : resultadoAlunos.data || []);
+    setTurmas(listaTurmas || []);
+  }
+
   useEffect(() => {
     if (aluno) return undefined;
 
@@ -186,7 +198,9 @@ export default function Dashboard() {
             {paginaAtual === "turma" && (
               <TelaTurma turma={tela.turma} setTela={setTela} />
             )}
-            {paginaAtual === "professores" && admin && <PainelProfessores />}
+            {paginaAtual === "professores" && admin && (
+              <PainelProfessores onAtualizado={recarregarGestao} />
+            )}
             {paginaAtual === "locais" && <PainelLocais />}
             {paginaAtual === "publicacoes" && (
               <PainelPublicacoes tipoInicial={tela.tipoPublicacao} />

@@ -1,20 +1,16 @@
 import { supabase } from "@/lib/supabase";
+import { dataHojeApp, horaAgoraApp } from "@/lib/dataHora";
 
 export async function criarChamada({
   turmaId,
   professor,
 }) {
-  const agora = new Date();
-
   const { data, error } = await supabase
     .from("chamadas")
     .insert({
       turma_id: turmaId,
-      data: agora.toISOString().split("T")[0],
-      horario: agora.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      data: dataHojeApp(),
+      horario: horaAgoraApp(),
       professor,
     })
     .select()
@@ -64,6 +60,14 @@ export async function salvarPresencasAulaExtra(chamadaId, alunos) {
   const { error } = await supabase.rpc("salvar_presencas_aula_extra", {
     p_chamada_id: chamadaId,
     p_aluno_ids: alunos.map((aluno) => aluno.id),
+  });
+
+  if (error) throw error;
+}
+
+export async function cancelarAulaExtra(aulaExtraId) {
+  const { error } = await supabase.rpc("cancelar_aula_extra", {
+    p_aula_extra_id: aulaExtraId,
   });
 
   if (error) throw error;
