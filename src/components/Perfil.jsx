@@ -5,7 +5,8 @@ import { useToast } from "@/contexts/ToastContext";
 import { uploadAvatar } from "@/services/avatarService";
 import { atualizarPerfil } from "@/services/usuarioService";
 import { supabase } from "@/lib/supabase";
-import { rotuloCargo } from "@/lib/permissoes";\nimport SenhaInput from "./ui/SenhaInput";
+import { rotuloCargo } from "@/lib/permissoes";
+import SenhaInput from "./ui/SenhaInput";
 
 export default function Perfil({ setTela }) {
   const { usuario, atualizarUsuario } = useAuth();

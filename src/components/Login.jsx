@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
-import CadastroModal from "./CadastroModal";\nimport SenhaInput from "./ui/SenhaInput";
+import CadastroModal from "./CadastroModal";
+import SenhaInput from "./ui/SenhaInput";
 
 export default function Login() {
   const [email, setEmail] = useState("");

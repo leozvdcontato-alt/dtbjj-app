@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";\nimport SenhaInput from "./ui/SenhaInput";
+import { supabase } from "../lib/supabase";
+import SenhaInput from "./ui/SenhaInput";
 
 const ESTADO_INICIAL = {
   nome: "",
