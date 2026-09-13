@@ -81,19 +81,19 @@ export default function Home({ alunos, turmas, setTela }) {
   const alunosAtivos = alunos.filter((aluno) => aluno.status === "Ativo").length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
           Visão geral
         </p>
         <h2 className="mt-1 text-2xl font-bold">Academia hoje</h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-xs leading-5 text-zinc-500">
           Acesso rápido ao que precisa acontecer no tatame.
         </p>
       </div>
 
       {professor ? (
-        <section className="rounded-3xl border border-white/10 bg-[#121212] p-4">
+        <section className="rounded-2xl border border-white/10 bg-[#121212] p-3">
           <p className="text-sm font-semibold text-white">
             Publicar para minhas turmas
           </p>
@@ -101,7 +101,7 @@ export default function Home({ alunos, turmas, setTela }) {
             Crie um aviso ou evento sem precisar ir até o menu Mais.
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() =>
@@ -111,7 +111,7 @@ export default function Home({ alunos, turmas, setTela }) {
                   tipoPublicacao: "noticia",
                 })
               }
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-200 transition active:bg-white/10"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-200 transition active:bg-white/10"
             >
               <Newspaper size={17} className="text-red-500" />
               Nova notícia
@@ -126,7 +126,7 @@ export default function Home({ alunos, turmas, setTela }) {
                   tipoPublicacao: "evento",
                 })
               }
-              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-200 transition active:bg-white/10"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-zinc-200 transition active:bg-white/10"
             >
               <CalendarDays size={17} className="text-red-500" />
               Novo evento
@@ -135,24 +135,24 @@ export default function Home({ alunos, turmas, setTela }) {
         </section>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setTela({ pagina: "alunos", turma: null })}
-          className="rounded-3xl border border-white/10 bg-[#121212] p-4 text-left transition active:scale-[0.99]"
+          className="rounded-2xl border border-white/10 bg-[#121212] p-3 text-left transition active:scale-[0.99]"
         >
-          <Users size={20} className="text-red-500" />
-          <p className="mt-5 text-3xl font-bold">{alunosAtivos}</p>
+          <Users size={18} className="text-red-500" />
+          <p className="mt-2 text-2xl font-bold">{alunosAtivos}</p>
           <p className="mt-1 text-xs text-zinc-500">Alunos ativos</p>
         </button>
 
         <button
           type="button"
           onClick={() => setTela({ pagina: "turmas", turma: null })}
-          className="rounded-3xl border border-white/10 bg-[#121212] p-4 text-left transition active:scale-[0.99]"
+          className="rounded-2xl border border-white/10 bg-[#121212] p-3 text-left transition active:scale-[0.99]"
         >
-          <GraduationCap size={20} className="text-red-500" />
-          <p className="mt-5 text-3xl font-bold">{turmas.length}</p>
+          <GraduationCap size={18} className="text-red-500" />
+          <p className="mt-2 text-2xl font-bold">{turmas.length}</p>
           <p className="mt-1 text-xs text-zinc-500">Turmas</p>
         </button>
       </section>
@@ -160,10 +160,10 @@ export default function Home({ alunos, turmas, setTela }) {
       <button
         type="button"
         onClick={() => setTela({ pagina: "chamada", turma: null })}
-        className="flex w-full items-center justify-between rounded-3xl bg-red-700 p-5 text-left text-white transition active:bg-red-800"
+        className="flex w-full items-center justify-between rounded-2xl bg-red-700 p-4 text-left text-white transition active:bg-red-800"
       >
-        <div className="flex items-center gap-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-black/20">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black/20">
             <ClipboardCheck size={22} />
           </div>
           <div>
@@ -176,7 +176,7 @@ export default function Home({ alunos, turmas, setTela }) {
         <ArrowRight size={20} />
       </button>
 
-      <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
+      <section className="rounded-2xl border border-white/10 bg-[#121212] p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-500">
@@ -200,16 +200,16 @@ export default function Home({ alunos, turmas, setTela }) {
             Nenhuma publicação ativa no momento.
           </p>
         ) : (
-          <div className="mt-4 space-y-2">
+          <div className="mt-3 space-y-2">
             {publicacoes.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setPublicacaoAberta(item)}
-                className="w-full rounded-2xl border border-white/5 bg-black/25 p-4 text-left transition active:bg-white/5"
+                className="w-full rounded-xl border border-white/5 bg-black/25 p-3 text-left transition active:bg-white/5"
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-950/50 text-red-400">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-950/50 text-red-400">
                     {item.tipo === "evento" ? (
                       <CalendarDays size={18} />
                     ) : (
@@ -273,11 +273,11 @@ export default function Home({ alunos, turmas, setTela }) {
         </div>
 
         {loading ? (
-          <p className="mt-5 text-sm text-zinc-500">Carregando...</p>
+          <p className="mt-3 text-sm text-zinc-500">Carregando...</p>
         ) : !ultimaChamada ? (
-          <p className="mt-5 text-sm text-zinc-500">Nenhuma chamada realizada.</p>
+          <p className="mt-3 text-sm text-zinc-500">Nenhuma chamada realizada.</p>
         ) : (
-          <div className="mt-5 rounded-2xl bg-black/30 p-4">
+          <div className="mt-3 rounded-xl bg-black/30 p-3">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-semibold">{ultimaChamada.turma}</p>
