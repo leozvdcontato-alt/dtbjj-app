@@ -261,7 +261,7 @@ export default function Home({ alunos, turmas, setTela }) {
         )}
       </section>
 
-      <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
+      <section className="rounded-2xl border border-white/10 bg-[#121212] p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400">
             <CalendarCheck2 size={20} />
@@ -281,7 +281,7 @@ export default function Home({ alunos, turmas, setTela }) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-semibold">{ultimaChamada.turma}</p>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
                   {formatarData(ultimaChamada.data, ultimaChamada.horario)}
                 </p>
               </div>
