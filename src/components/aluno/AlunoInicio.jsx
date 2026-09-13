@@ -127,15 +127,15 @@ export default function AlunoInicio({ portal, setTela }) {
   }
 
   return (
-    <div className="space-y-4">
-      <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-5">
+    <div className="space-y-3">
+      <section className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
           Minha jornada
         </p>
 
-        <div className="mt-4 flex items-end justify-between gap-4">
+        <div className="mt-3 flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-xl font-bold text-white">
               {aluno?.nome || "Aluno DTBJJ"}
             </h2>
             <p className="mt-1 text-sm text-zinc-400">
@@ -150,30 +150,30 @@ export default function AlunoInicio({ portal, setTela }) {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setTela({ pagina: "turmas", turma: null })}
-          className="rounded-2xl border border-white/10 bg-[#121212] p-4 text-left transition active:scale-[0.99]"
+          className="rounded-2xl border border-white/10 bg-[#121212] p-3 text-left transition active:scale-[0.99]"
         >
           <GraduationCap size={20} className="text-red-500" />
-          <p className="mt-5 text-2xl font-bold">{turmas.length}</p>
+          <p className="mt-2 text-xl font-bold">{turmas.length}</p>
           <p className="mt-1 text-xs text-zinc-500">Turmas matriculadas</p>
         </button>
 
         <button
           type="button"
           onClick={() => setTela({ pagina: "frequencia", turma: null })}
-          className="rounded-2xl border border-white/10 bg-[#121212] p-4 text-left transition active:scale-[0.99]"
+          className="rounded-2xl border border-white/10 bg-[#121212] p-3 text-left transition active:scale-[0.99]"
         >
           <CalendarCheck2 size={20} className="text-red-500" />
-          <p className="mt-5 text-2xl font-bold">{presencas.length}</p>
+          <p className="mt-2 text-xl font-bold">{presencas.length}</p>
           <p className="mt-1 text-xs text-zinc-500">Presenças registradas</p>
         </button>
       </section>
 
       {push === "inativo" ? (
-        <section className="rounded-3xl border border-red-900/30 bg-red-950/15 p-4">
+        <section className="rounded-2xl border border-red-900/30 bg-red-950/15 p-3">
           <div className="flex items-start gap-3">
             <Bell size={20} className="mt-0.5 shrink-0 text-red-500" />
             <div className="flex-1">
@@ -197,7 +197,7 @@ export default function AlunoInicio({ portal, setTela }) {
         </section>
       ) : null}
 
-      <section className="rounded-3xl border border-white/10 bg-[#121212] p-5">
+      <section className="rounded-2xl border border-white/10 bg-[#121212] p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-semibold">Notícias e eventos</h3>
           <button
@@ -209,7 +209,7 @@ export default function AlunoInicio({ portal, setTela }) {
           </button>
         </div>
 
-        <div className="mt-4 space-y-2">
+        <div className="mt-3 space-y-2">
           {destaques.length ? (
             destaques.map((item) => (
               <button
