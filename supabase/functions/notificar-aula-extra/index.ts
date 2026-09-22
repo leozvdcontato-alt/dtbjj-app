@@ -50,13 +50,35 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Sem permissão para notificar aula extra" }, 403);
     }
 
-    const { aula_extra_id } = await req.json();
-    if (!aula_extra_id) return json({ error: "Aula extra não informada" }, 400);
+    const { data: limiteOk, error: limiteError } = await admin.rpc(
+      "consume_rate_limit",
+      {
+        p_actor_id: userData.user.id,
+        p_action: "notificar-aula-extra",
+        p_limit: 10,
+        p_window_seconds: 300,
+      }
+    );
+
+    if (limiteError) {
+      console.error("Falha ao verificar rate limit:", limiteError);
+      return json({ error: "Não foi possível validar a solicitação agora." }, 500);
+    }
+
+    if (!limiteOk) {
+      return json({ error: "Muitas notificações em pouco tempo. Aguarde alguns minutos." }, 429);
+    }
+
+    const body = await req.json();
+    const aulaExtraId = Number(body?.aula_extra_id);
+    if (!Number.isSafeInteger(aulaExtraId) || aulaExtraId <= 0) {
+      return json({ error: "Aula extra inválida" }, 400);
+    }
 
     const { data: aula, error: aulaError } = await admin
       .from("aulas_extras")
       .select("id,academia_id,nome,data,horario,professor_usuario_id,locais(nome)")
-      .eq("id", aula_extra_id)
+      .eq("id", aulaExtraId)
       .maybeSingle();
 
     if (aulaError || !aula || aula.academia_id !== perfil.academia_id) {
