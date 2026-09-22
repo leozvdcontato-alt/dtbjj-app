@@ -71,12 +71,42 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Apenas administradores podem criar professores." }, 403);
     }
 
+    const { data: limiteOk, error: limiteError } = await admin.rpc(
+      "consume_rate_limit",
+      {
+        p_actor_id: user.id,
+        p_action: "convidar-professor",
+        p_limit: 10,
+        p_window_seconds: 600,
+      }
+    );
+
+    if (limiteError) {
+      console.error("Falha ao verificar rate limit:", limiteError);
+      return json({ error: "Não foi possível validar a solicitação agora." }, 500);
+    }
+
+    if (!limiteOk) {
+      return json({ error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." }, 429);
+    }
+
     const body = await req.json();
     const nome = String(body?.nome || "").trim();
     const email = String(body?.email || "").trim().toLowerCase();
 
     if (!nome || !email) {
       return json({ error: "Nome e e-mail são obrigatórios." }, 400);
+    }
+
+    if (nome.length > 120) {
+      return json({ error: "Nome muito longo." }, 400);
+    }
+
+    if (
+      email.length > 254 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      return json({ error: "Informe um e-mail válido." }, 400);
     }
 
     const { data: usuarioExistente } = await admin
@@ -103,9 +133,9 @@ Deno.serve(async (req: Request) => {
       });
 
     if (pendenteError) {
+      console.error("Falha ao criar autorização pendente:", pendenteError);
       return json({
         error: "Não foi possível autorizar a criação do professor.",
-        detail: pendenteError.message,
       }, 400);
     }
 
@@ -134,9 +164,9 @@ Deno.serve(async (req: Request) => {
         return json({ error: "Já existe uma conta com este e-mail." }, 409);
       }
 
+      console.error("Falha ao criar usuário do professor:", criarError);
       return json({
         error: "Não foi possível criar o acesso do professor.",
-        detail: criarError?.message || "Usuário não criado.",
       }, 400);
     }
 
@@ -150,9 +180,9 @@ Deno.serve(async (req: Request) => {
 
     if (marcarError) {
       await admin.auth.admin.deleteUser(authUserId);
+      console.error("Falha ao finalizar cadastro do professor:", marcarError);
       return json({
         error: "Não foi possível finalizar o cadastro do professor.",
-        detail: marcarError.message,
       }, 500);
     }
 
@@ -164,6 +194,8 @@ Deno.serve(async (req: Request) => {
       message: "Professor criado com senha temporária.",
     });
   } catch (error) {
+    console.error("Erro interno ao criar professor:", error);
+
     if (tokenPendente) {
       await admin
         .from("professor_criacoes_pendentes")
@@ -177,7 +209,6 @@ Deno.serve(async (req: Request) => {
 
     return json({
       error: "Erro interno ao criar professor.",
-      detail: error instanceof Error ? error.message : "Erro desconhecido",
     }, 500);
   }
 });
