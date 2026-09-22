@@ -43,18 +43,18 @@ Deno.serve(async (req: Request) => {
     if (perfilError || !perfil) return json({ error: "Perfil não encontrado" }, 403);
 
     const cargo = String(perfil.cargo || "").toLowerCase();
-    if (
-      (!cargo.startsWith("administrador") && !cargo.startsWith("professor")) ||
-      perfil.status !== "Ativo"
-    ) {
-      return json({ error: "Sem permissão para notificar aula extra" }, 403);
+    const ehAdmin = cargo.startsWith("administrador");
+    const ehProfessor = cargo.startsWith("professor");
+
+    if ((!ehAdmin && !ehProfessor) || perfil.status !== "Ativo") {
+      return json({ error: "Sem permissão para enviar notificações" }, 403);
     }
 
     const { data: limiteOk, error: limiteError } = await admin.rpc(
       "consume_rate_limit",
       {
         p_actor_id: userData.user.id,
-        p_action: "notificar-aula-extra",
+        p_action: "notificar-publicacao",
         p_limit: 10,
         p_window_seconds: 300,
       }
@@ -70,63 +70,75 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json();
-    const aulaExtraId = Number(body?.aula_extra_id);
-    if (!Number.isSafeInteger(aulaExtraId) || aulaExtraId <= 0) {
-      return json({ error: "Aula extra inválida" }, 400);
+    const publicacaoId = Number(body?.publicacao_id);
+    if (!Number.isSafeInteger(publicacaoId) || publicacaoId <= 0) {
+      return json({ error: "Publicação inválida" }, 400);
     }
 
-    const { data: aula, error: aulaError } = await admin
-      .from("aulas_extras")
-      .select("id,academia_id,nome,data,horario,professor_usuario_id,locais(nome)")
-      .eq("id", aulaExtraId)
+    const { data: publicacao, error: publicacaoError } = await admin
+      .from("publicacoes")
+      .select("id, academia_id, autor_usuario_id, tipo, titulo, evento_data, publicado")
+      .eq("id", publicacaoId)
       .maybeSingle();
 
-    if (aulaError || !aula || aula.academia_id !== perfil.academia_id) {
-      return json({ error: "Aula extra não encontrada" }, 404);
+    if (publicacaoError || !publicacao || publicacao.academia_id !== perfil.academia_id) {
+      return json({ error: "Publicação não encontrada" }, 404);
     }
 
-    if (
-      !cargo.startsWith("administrador") &&
-      aula.professor_usuario_id !== perfil.id
-    ) {
-      return json({ error: "Professor só pode notificar aulas abertas por ele" }, 403);
+    if (!publicacao.publicado) return json({ error: "A publicação ainda não está publicada" }, 400);
+    if (!ehAdmin && publicacao.autor_usuario_id !== perfil.id) {
+      return json({ error: "Professor só pode notificar publicações próprias" }, 403);
     }
 
-    const { data: alunos, error: alunosError } = await admin
-      .from("alunos")
-      .select("id")
-      .eq("academia_id", perfil.academia_id)
-      .eq("status", "Ativo");
+    const { data: alvos, error: alvosError } = await admin
+      .from("publicacao_turmas")
+      .select("turma_id")
+      .eq("publicacao_id", publicacaoId);
 
-    if (alunosError) throw alunosError;
+    if (alvosError) throw alvosError;
+    const turmaIds = [...new Set((alvos || []).map((item) => item.turma_id))];
+    if (!turmaIds.length) return json({ enviados: 0, mensagem: "Nenhuma turma selecionada" });
 
-    const alunoIds = (alunos || []).map((item) => item.id);
-    if (!alunoIds.length) return json({ enviados: 0 });
+    if (ehProfessor) {
+      const { data: vinculos, error: vinculosError } = await admin
+        .from("turma_professores")
+        .select("turma_id")
+        .eq("usuario_id", perfil.id)
+        .in("turma_id", turmaIds);
+      if (vinculosError) throw vinculosError;
+      const permitidas = new Set((vinculos || []).map((item) => item.turma_id));
+      if (turmaIds.some((id) => !permitidas.has(id))) {
+        return json({ error: "Uma das turmas não pertence ao professor" }, 403);
+      }
+    }
+
+    const { data: matriculas, error: matriculasError } = await admin
+      .from("matriculas")
+      .select("aluno_id")
+      .in("turma_id", turmaIds);
+    if (matriculasError) throw matriculasError;
+
+    const alunoIds = [...new Set((matriculas || []).map((item) => item.aluno_id))];
+    if (!alunoIds.length) return json({ enviados: 0, mensagem: "Não há alunos nas turmas selecionadas" });
 
     const { data: usuarios, error: usuariosError } = await admin
       .from("usuarios")
-      .select("id,aluno_id")
+      .select("id, aluno_id")
       .eq("academia_id", perfil.academia_id)
-      .eq("cargo", "Aluno")
-      .eq("status", "Ativo")
       .in("aluno_id", alunoIds);
-
     if (usuariosError) throw usuariosError;
 
-    const usuarioIds = (usuarios || []).map((item) => item.id);
-    if (!usuarioIds.length) return json({ enviados: 0 });
+    const usuarioIds = [...new Set((usuarios || []).map((item) => item.id))];
+    if (!usuarioIds.length) return json({ enviados: 0, mensagem: "Nenhum aluno possui usuário ativo" });
 
     const { data: subscriptions, error: subscriptionsError } = await admin
       .from("push_subscriptions")
-      .select("id,endpoint,p256dh,auth")
+      .select("id, endpoint, p256dh, auth")
       .in("usuario_id", usuarioIds);
-
     if (subscriptionsError) throw subscriptionsError;
 
     const { data: config, error: configError } = await admin.rpc("obter_push_config");
-    if (configError || !config?.[0]) {
-      throw configError || new Error("Configuração Web Push ausente");
-    }
+    if (configError || !config?.[0]) throw configError || new Error("Configuração Web Push ausente");
 
     webpush.setVapidDetails(
       "mailto:leozvd.contato@gmail.com",
@@ -134,13 +146,17 @@ Deno.serve(async (req: Request) => {
       config[0].private_key
     );
 
-    const hora = String(aula.horario || "").slice(0, 5);
-    const local = aula.locais?.nome || "local informado no app";
+    const dataEvento = publicacao.evento_data
+      ? new Date(publicacao.evento_data + "T12:00:00").toLocaleDateString("pt-BR")
+      : null;
+
     const payload = JSON.stringify({
-      title: "Aula extra disponível 🥋",
-      body: `${aula.nome} hoje às ${hora} no ${local}. Quem quiser treinar, é só chegar.`,
-      url: "/",
-      tag: `aula-extra-${aula.id}`,
+      title: publicacao.tipo === "evento" ? "Novo evento da DTBJJ" : "Nova notícia da DTBJJ",
+      body: publicacao.tipo === "evento" && dataEvento
+        ? publicacao.titulo + " · " + dataEvento
+        : publicacao.titulo,
+      url: "/?publicacao=" + publicacao.id,
+      tag: "publicacao-" + publicacao.id,
     });
 
     let enviados = 0;
@@ -160,15 +176,20 @@ Deno.serve(async (req: Request) => {
           await admin.from("push_subscriptions").delete().eq("id", subscription.id);
           removidos += 1;
         } else {
-          console.error("Falha ao enviar push de aula extra:", error);
+          console.error("Falha ao enviar push:", error);
           falhas += 1;
         }
       }
     }));
 
+    await admin
+      .from("publicacoes")
+      .update({ push_enviado_at: new Date().toISOString() })
+      .eq("id", publicacao.id);
+
     return json({ enviados, removidos, falhas });
   } catch (error) {
     console.error(error);
-    return json({ error: "Não foi possível enviar as notificações da aula extra." }, 500);
+    return json({ error: "Não foi possível enviar as notificações." }, 500);
   }
 });

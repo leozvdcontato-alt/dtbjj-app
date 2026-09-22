@@ -59,12 +59,35 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Apenas administradores podem executar esta ação." }, 403);
     }
 
+    const { data: limiteOk, error: limiteError } = await admin.rpc(
+      "consume_rate_limit",
+      {
+        p_actor_id: user.id,
+        p_action: "gerenciar-usuario",
+        p_limit: 30,
+        p_window_seconds: 300,
+      }
+    );
+
+    if (limiteError) {
+      console.error("Falha ao verificar rate limit:", limiteError);
+      return json({ error: "Não foi possível validar a solicitação agora." }, 500);
+    }
+
+    if (!limiteOk) {
+      return json({ error: "Muitas solicitações. Aguarde alguns minutos e tente novamente." }, 429);
+    }
+
     const body = await req.json();
     const acao = String(body?.acao || "");
 
     if (acao === "status_professor") {
       const usuarioId = String(body?.usuario_id || "");
       const status = String(body?.status || "");
+
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(usuarioId)) {
+        return json({ error: "Professor inválido." }, 400);
+      }
 
       if (!["Ativo", "Inativo"].includes(status)) {
         return json({ error: "Status inválido." }, 400);
@@ -94,6 +117,10 @@ Deno.serve(async (req: Request) => {
 
     if (acao === "excluir_professor") {
       const usuarioId = String(body?.usuario_id || "");
+
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(usuarioId)) {
+        return json({ error: "Professor inválido." }, 400);
+      }
 
       const { data: professor, error: professorError } = await admin
         .from("usuarios")
@@ -138,7 +165,7 @@ Deno.serve(async (req: Request) => {
 
     if (acao === "excluir_aluno") {
       const alunoId = Number(body?.aluno_id);
-      if (!Number.isFinite(alunoId)) {
+      if (!Number.isSafeInteger(alunoId) || alunoId <= 0) {
         return json({ error: "Aluno inválido." }, 400);
       }
 
@@ -199,7 +226,6 @@ Deno.serve(async (req: Request) => {
     return json(
       {
         error: "Não foi possível concluir a ação.",
-        detail: error instanceof Error ? error.message : "Erro desconhecido",
       },
       500
     );

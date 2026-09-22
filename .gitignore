@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Local secrets / environment files
+.env
+.env.*
+!.env.example
+supabase/.env
+supabase/.env.*
