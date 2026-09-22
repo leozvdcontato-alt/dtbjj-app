@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json();
-    const publicacaoId = Number(body?.publicacaoId);
+    const publicacaoId = Number(body?.publicacao_id);
     if (!Number.isSafeInteger(publicacaoId) || publicacaoId <= 0) {
       return json({ error: "Publicação inválida" }, 400);
     }
