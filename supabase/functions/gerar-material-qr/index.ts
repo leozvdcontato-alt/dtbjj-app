@@ -76,6 +76,10 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return json({ error: "Método não permitido." }, 405);
+  }
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -109,6 +113,25 @@ Deno.serve(async (req: Request) => {
       perfil.status !== "Ativo"
     ) {
       return json({ error: "Sem permissão para acessar os QR Codes." }, 403);
+    }
+
+    const { data: limiteOk, error: limiteError } = await admin.rpc(
+      "consume_rate_limit",
+      {
+        p_actor_id: user.id,
+        p_action: "gerar-material-qr",
+        p_limit: 30,
+        p_window_seconds: 300,
+      }
+    );
+
+    if (limiteError) {
+      console.error("Falha ao verificar rate limit:", limiteError);
+      return json({ error: "Não foi possível validar a solicitação agora." }, 500);
+    }
+
+    if (!limiteOk) {
+      return json({ error: "Muitas solicitações. Aguarde alguns minutos e tente novamente." }, 429);
     }
 
     const body = await req.json();
